@@ -1,193 +1,78 @@
-<div align="center">
+# Paragon Exteriors — Marketing Website
 
-# ⚡ FullStackHero .NET 10 Starter Kit
+The public marketing site for **Paragon Exteriors LLC** (paragonexteriorsnj.com): a ~150-page,
+SEO/GEO-optimized static site built with **Astro 5 + Tailwind 4**, wired into the FSH.Starter
+backend's **Crm module** for lead capture.
 
-**A production-ready, modular .NET 10 monolith + two React 19 apps — the fastest way to ship a multi-tenant SaaS.**
-
-Identity, multitenancy, billing, auditing, webhooks, files, chat, real-time, caching, jobs, storage, OpenAPI and OpenTelemetry — already wired, fully tested, and **100% yours as source** (no black-box packages).
-
-[![fsh CLI](https://img.shields.io/nuget/v/FullStackHero.CLI?label=fsh%20cli&color=512BD4)](https://www.nuget.org/packages/FullStackHero.CLI)
-[![template](https://img.shields.io/nuget/v/FullStackHero.NET.StarterKit?label=dotnet%20new%20fsh&color=512BD4)](https://www.nuget.org/packages/FullStackHero.NET.StarterKit)
-[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/download)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docs](https://img.shields.io/badge/docs-fullstackhero.net-2563eb)](https://fullstackhero.net)
-[![Stars](https://img.shields.io/github/stars/fullstackhero/dotnet-starter-kit?style=social)](https://github.com/fullstackhero/dotnet-starter-kit)
-
-### [📖 Documentation](https://fullstackhero.net) · [🚀 Get Started](https://fullstackhero.net/docs/getting-started/introduction/) · [🧩 Modules](https://fullstackhero.net/docs/modules/) · [🏗️ Architecture](https://fullstackhero.net/docs/architecture/) · [📦 Changelog](https://fullstackhero.net/docs/changelog/)
-
-</div>
-
----
-
-## Why FullStackHero?
-
-Most starter kits give you a login page and a TODO list. This one gives you the **boring, hard parts already done right** — multitenancy, auth, billing, auditing, background jobs, real-time, file storage, observability — across a clean **Vertical Slice** backend *and* two polished **React 19** front-ends, orchestrated locally with one command via **.NET Aspire**, and deployable to Docker or AWS.
-
-You scaffold with the `fsh` CLI and get the **complete, detached source** — every BuildingBlock, Module, and Host project with real project references. No hidden NuGet runtime, nothing to "eject" later. Own it, read it, change it.
+## Quick start
 
 ```bash
-dotnet tool install -g FullStackHero.CLI
-fsh new MyApp
-cd MyApp
-dotnet run --project src/Host/MyApp.AppHost   # 🎉 whole stack up: API + 2 React apps + Postgres + Valkey + MinIO
+npm install
+npm run dev        # http://localhost:4321
+npm run build      # static build → dist/
 ```
 
-> Then open the **Aspire dashboard** at `https://localhost:15888`, the **API + Scalar docs** at `https://localhost:7030/scalar`, the **admin** app at `http://localhost:5173`, and the **dashboard** app at `http://localhost:5174`. Sign in with a seeded demo account (e.g. `admin@acme.com` / `Password123!`).
+## Architecture
 
----
-
-## ✨ What's inside
-
-### Backend — modular monolith, vertical slices
-- **.NET 10 · C# latest · Minimal APIs · [Mediator](https://github.com/martinothamar/Mediator) (source-generated CQRS) · FluentValidation**
-- **EF Core 10** on **PostgreSQL** (Npgsql), with domain events, the specification pattern, soft-delete + audit interceptors, and tenant-isolated `DbContext`s.
-- **JWT auth + ASP.NET Identity** — issuance/refresh, roles & fine-grained permissions, rate-limited auth, password policies, sessions, impersonation.
-- **Multitenancy** via [Finbuckle](https://www.finbuckle.com/) — tenant resolution, provisioning, per-tenant migrations & seeding, isolation enforced by default.
-- **Cross-cutting**: HybridCache on **Valkey** (Redis-compatible), **Hangfire** jobs, presigned S3/**MinIO** storage, mailing, idempotency, quotas, rate limiting, API versioning, RFC 9457 `ProblemDetails`.
-- **Observability**: Serilog structured logging + **OpenTelemetry** traces/metrics/logs, health probes, security/exception auditing.
-- **Docs**: **OpenAPI** + the **Scalar** API reference UI.
-
-### Front-ends — two React 19 apps
-- **`clients/admin`** (operator console) and **`clients/dashboard`** (tenant app): **React 19 + Vite 7 + TypeScript**, **TanStack Query v5**, **React Router 7**, **Radix + Tailwind v4** (shadcn-style), real-time via **SignalR**/**SSE**.
-- Runtime config (`/config.json`, no rebuild per environment), hand-written typed API client, and **Playwright** E2E suites.
-
-### Modules (bounded contexts)
-**Identity · Multitenancy · Billing · Catalog · Tickets · Chat · Files · Webhooks · Auditing · Notifications** — each a runtime project plus a `.Contracts` project (its only public surface), boundaries enforced by architecture tests.
-
-### Cloud-native & DevOps
-- **.NET Aspire** orchestrates the entire stack locally with one command (Postgres + pgAdmin, Valkey + RedisInsight, MinIO, migrator, demo-seeder, API, and both React apps).
-- **Docker Compose** production stack (`deploy/docker`) and **Terraform** for AWS (`deploy/terraform`); API image published to GHCR.
-- A one-shot **DbMigrator** (migrations are never run at API startup), and the **`fsh` CLI** + `dotnet new` template for distribution.
-
-### Quality
-**1,600+ backend tests** (xUnit, Shouldly, NSubstitute, AutoFixture, **NetArchTest** boundaries, **Testcontainers** integration) and **200+ front-end E2E tests** (Playwright). Path-scoped CI for backend and frontend; warnings-as-errors.
-
----
-
-## 🚀 Getting started
-
-### Option 1 — the `fsh` CLI (recommended)
-
-```bash
-dotnet tool install -g FullStackHero.CLI
-fsh doctor          # verify your environment (SDK, Docker, Aspire, ports)
-fsh new MyApp       # interactive wizard
-```
-
-The wizard asks what to include (Aspire AppHost, the React apps). Non-interactive:
-
-```bash
-fsh new MyApp --non-interactive          # full stack, Postgres
-fsh new MyApp --no-frontend              # backend-only
-fsh new MyApp --no-aspire --no-frontend  # minimal API + migrator
-```
-
-### Option 2 — the `dotnet new` template
-
-```bash
-dotnet new install FullStackHero.NET.StarterKit
-dotnet new fsh -n MyApp
-```
-
-### Option 3 — clone the repo
-
-```bash
-git clone https://github.com/fullstackhero/dotnet-starter-kit.git MyApp && cd MyApp
-dotnet run --project src/Host/FSH.Starter.AppHost
-```
-
-> **Prerequisites:** [.NET 10 SDK](https://dotnet.microsoft.com/download) · [Docker](https://www.docker.com/) (Postgres/Valkey/MinIO via Aspire) · [Node 20+](https://nodejs.org/) (for the React apps).
-
-**`fsh` commands:** `new` · `doctor` · `info` · `update` · `--version`. Full reference → [fullstackhero.net/docs/cli](https://fullstackhero.net/docs/cli/).
-
----
-
-## 🧱 Tech stack
-
-| Backend | | Frontend | |
-|---|---|---|---|
-| Runtime | .NET 10 / C# latest | Framework | React 19 + Vite 7 + TS 5 |
-| API | Minimal APIs + Mediator (CQRS) | Data | TanStack Query v5 |
-| Validation | FluentValidation | Routing | React Router 7 |
-| ORM / DB | EF Core 10 / PostgreSQL | UI | Radix + Tailwind v4 (shadcn) |
-| Auth | JWT + ASP.NET Identity | Realtime | SignalR · SSE |
-| Multitenancy | Finbuckle 10 | Tests | Playwright |
-| Cache / Jobs | Valkey · Hangfire | | |
-| Storage | S3 / MinIO (presigned) | **Infra** | |
-| Docs | OpenAPI + Scalar | Orchestration | .NET Aspire |
-| Observability | Serilog + OpenTelemetry | Deploy | Docker Compose · Terraform |
-| Testing | xUnit · Testcontainers · NetArchTest | | |
-
----
-
-## 🗺️ Repository layout
-
-| Path | What |
+| Piece | Where |
 |---|---|
-| `src/BuildingBlocks/` | Shared framework libraries (Core, Persistence, Web, Caching, Eventing, Storage, Quota…) |
-| `src/Modules/{Name}/` | Bounded contexts — each with a runtime project + a `.Contracts` project (its public API) |
-| `src/Host/FSH.Starter.Api` | Composition-root Web API host |
-| `src/Host/FSH.Starter.AppHost` | .NET Aspire orchestrator (Postgres, Valkey, MinIO, migrator, API, both React apps) |
-| `src/Host/FSH.Starter.DbMigrator` | One-shot migrate/seed runner (DB is **not** migrated at API startup) |
-| `src/Tools/CLI` | The `fsh` CLI (Spectre.Console) |
-| `clients/admin`, `clients/dashboard` | The two React apps |
-| `deploy/` | Docker Compose, Terraform (AWS), Dokploy |
-| `src/Tests/` | Unit, Architecture (NetArchTest), Integration (Testcontainers) |
+| Business identity (NAP, license, socials) | `src/config/business.ts` — single source of truth |
+| Integration switches (Mux, CRM, GA4, voice) | `.env` → see `.env.example` |
+| Content collections (services/towns/combos/posts) | `src/content/` + `src/content.config.ts` |
+| Page templates | `src/pages/[service]/…`, `src/pages/service-areas/…`, `src/pages/blog/…` |
+| JSON-LD builders (RoofingContractor/Service/FAQ/Article/Breadcrumb) | `src/lib/schema.ts` |
+| GEO endpoints | `/llms.txt`, `/llms-full.txt` (generated from all content) |
+| Lead capture → CRM | `src/components/LeadForm.astro` → `POST {PUBLIC_LEADS_API}` with `tenant` header; UTM/referrer first-touch attribution included |
 
-Architecture deep-dive → [fullstackhero.net/docs/architecture](https://fullstackhero.net/docs/architecture/).
+### URL structure
 
----
+- `/{service}/` — service pillars (e.g. `/roof-replacement/`)
+- `/{service}/{town}/` — money pages (e.g. `/roof-replacement/toms-river/`), generated from `src/content/combos/`
+- `/service-areas/{town}/` — town hubs
+- `/blog/{slug}/` — guides
 
-## ☁️ Deploy
+## Media assets (one-time fetch)
 
-**Single-host via Docker Compose:**
+The remote build environment can't reach the media CDNs, so assets are pulled by the
+**Fetch Website Assets** GitHub Action (`.github/workflows/fetch-assets.yml`), which downloads
+everything in `scripts/asset-manifest.json` (brand imagery, the previous site's real drone
+project photos, team photos, and the hero reel), optimizes it, and commits to
+`clients/website/public/media/`. Run it from the Actions tab against this branch if media is missing.
 
-```bash
-cd deploy/docker
-cp .env.example .env   # fsh new pre-generates this with strong secrets
-docker compose up -d --build
-```
+## Launch runbook (do these once at go-live)
 
-**AWS via Terraform** (ECS Fargate + RDS + ElastiCache + S3/CloudFront) lives in `deploy/terraform`.
+1. **Mux hero**: upload `public/media/hero-reel.mp4` (the "30 roofs / 30 days" reel) at
+   [dashboard.mux.com](https://dashboard.mux.com) → copy the playback ID → set `PUBLIC_MUX_PLAYBACK_ID`.
+   Until then the hero uses the local video fallback automatically.
+2. **CRM**: deploy the FSH.Starter API, set `PUBLIC_LEADS_API=https://<api-host>/api/v1/crm/leads`
+   and `PUBLIC_TENANT` (default `root`). Leads then appear in the admin app's Leads section.
+3. **DNS/hosting**: deploy to Vercel. **This is a monorepo — set the Vercel project's
+   Root Directory to `clients/website`** (Settings → Build and Deployment → Root Directory), then
+   Vercel auto-detects Astro and uses `clients/website/vercel.json` (301s from old Wix URLs + cache
+   headers). Without that setting Vercel builds from the repo root and returns `404: NOT_FOUND` on
+   every route; the root-level `vercel.json` is a fallback that builds the site from root, but
+   setting Root Directory is preferred. Point paragonexteriorsnj.com at the deployment.
+4. **Google Search Console**: verify the domain, submit `/sitemap-index.xml`, request indexing for
+   the homepage + service pillars. **The old Wix site shipped `noindex` on every page** — after
+   launch, confirm no route carries `noindex` (only `/thank-you/` does, intentionally).
+5. **Google Business Profile**: create/claim the GBP for Paragon Exteriors LLC, category "Roofing
+   contractor", service-area business (Ocean/Monmouth County), same NAP as `business.ts`,
+   link the site, start the review-generation habit (ask every Won customer).
+   Also correct/claim the stray Yelp listing that duplicates a Wisconsin company's text.
+6. **GA4**: create a property, set `PUBLIC_GA4_ID`. Add an "AI Traffic" channel group with regex
+   `chatgpt\.com|perplexity\.ai|claude\.ai|gemini\.google\.com|copilot\.microsoft\.com` placed
+   above Referral to measure AI-search referrals. Conversion events already fire:
+   `generate_lead` (form submit) and `conversion_thank_you` (thank-you page).
+7. **Voice agent**: see `docs/voice-agent.md` (Hume EVI phone answering + optional web widget).
+8. **Socials**: fix the Facebook page link in `src/config/business.ts` if the real page URL
+   differs (`facebook.com/paragonexteriorsnj` is assumed; the old site linked a Wix placeholder).
 
-Guides → [Local orchestration](https://fullstackhero.net/docs/deployment/aspire/) · [Docker](https://fullstackhero.net/docs/deployment/) · [AWS / Terraform](https://fullstackhero.net/docs/deployment/aws-terraform/) · [Database migrations](https://fullstackhero.net/docs/deployment/database-migrations/).
+## Content conventions
 
----
+Every content file's frontmatter is validated by zod (`src/content.config.ts`) at build time —
+`metaDescription` is capped at 175 chars, FAQs become FAQPage JSON-LD automatically, and internal
+links must use existing slugs (the build fails on schema violations, not on broken links — run
+a link checker before big content changes).
 
-## 🧪 Testing
-
-```bash
-dotnet test src/FSH.Starter.slnx        # backend: unit + architecture + Testcontainers integration
-cd clients/admin     && npm run test:e2e # Playwright (operator app)
-cd clients/dashboard && npm run test:e2e # Playwright (tenant app)
-```
-
-> Integration tests require Docker (Testcontainers spins real Postgres). Architecture tests enforce module boundaries.
-
----
-
-## 📖 Documentation
-
-Full guides, module references, and architecture decisions live at **[fullstackhero.net](https://fullstackhero.net)**:
-
-- [Getting started](https://fullstackhero.net/docs/getting-started/introduction/) — scaffold, run, and the default credentials
-- [Architecture](https://fullstackhero.net/docs/architecture/) — modular monolith + vertical slices, multitenancy deep-dive
-- [Modules](https://fullstackhero.net/docs/modules/) — Identity, Catalog, Tickets, Chat, and more
-- [Local orchestration with Aspire](https://fullstackhero.net/docs/deployment/aspire/)
-- [CLI reference](https://fullstackhero.net/docs/cli/) · [Changelog](https://fullstackhero.net/docs/changelog/)
-
----
-
-## 🤝 Contributing
-
-Issues and PRs are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). Branch from and target **`main`**; CI runs path-scoped backend + frontend pipelines, and stable releases are cut from `v*` tags.
-
-## 📄 License
-
-MIT — see [`LICENSE`](LICENSE). Built and maintained by [**Mukesh Murugan**](https://codewithmukesh.com) and the FullStackHero community, for teams that want to ship fast without sacrificing architectural discipline.
-
-<div align="center">
-
-**[⭐ Star us on GitHub](https://github.com/fullstackhero/dotnet-starter-kit)** if this saves you time — it genuinely helps.
-
-</div>
+**Do not invent facts in content**: no awards, certifications, or review counts that aren't real.
+The license number NJ HIC #13VH13814500 and the phone number live in `business.ts` only.

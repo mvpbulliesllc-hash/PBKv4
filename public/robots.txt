@@ -1,0 +1,10 @@
+# Paragon Exteriors — www.paragonexteriorsnj.com
+# All welcome, including AI/LLM crawlers (we want to be found in AI answers).
+
+User-agent: *
+Allow: /
+Disallow: /thank-you/
+
+Sitemap: https://www.paragonexteriorsnj.com/sitemap-index.xml
+
+# AI answer engines — see /llms.txt for a machine-friendly site guide
