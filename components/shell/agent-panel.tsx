@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   AudioLines,
   Bot,
@@ -22,11 +22,13 @@ import { cn } from "@/lib/utils"
 import {
   RUNTIME_MODELS,
   type AgentEffort,
+  type Ay0RunMode,
+  type Ay0SkillOption,
   type LocalRuntimeId,
 } from "@/lib/local-agent-types"
 import { useLocalAgents } from "./local-agent-context"
 
-type Mode = { id: string; label: string; icon: typeof User }
+type Mode = { id: Ay0RunMode; label: string; icon: typeof User }
 type ChatTab = "workflow" | "matrix"
 type ChatMessage = { id: string; who: string; role?: string; text: string; self?: boolean }
 
@@ -47,15 +49,15 @@ const ROSTER = [
 
 const MATRIX_WELCOME: ChatMessage = {
   id: "ayo-welcome",
-  who: "Ayo",
+  who: "AY.0",
   role: "Matrix Operator",
-  text: "Matrix ENV online. Choose Codex or Claude Code, set the model and effort, then give me the objective. I will dispatch it into the real local workspace runtime.",
+  text: "Matrix ENV online. Choose Codex or Claude Code, set the model, effort, and optional skill, then give me the objective. I will dispatch it into the real local workspace runtime.",
 }
 
 export function AgentPanel() {
   const { runAgent, statuses } = useLocalAgents()
   const [chatTab, setChatTab] = useState<ChatTab>("workflow")
-  const [mode, setMode] = useState("team")
+  const [mode, setMode] = useState<Ay0RunMode>("team")
   const [humeLive, setHumeLive] = useState(false)
   const [draft, setDraft] = useState("")
   const [runtime, setRuntime] = useState<LocalRuntimeId>("codex")
@@ -63,6 +65,21 @@ export function AgentPanel() {
   const [effort, setEffort] = useState<AgentEffort>("high")
   const [matrixMessages, setMatrixMessages] = useState<ChatMessage[]>([MATRIX_WELCOME])
   const [sending, setSending] = useState(false)
+  const [skills, setSkills] = useState<Ay0SkillOption[]>([])
+  const [selectedSkill, setSelectedSkill] = useState("ay0-core")
+
+  useEffect(() => {
+    let active = true
+    fetch("/api/ay0/catalog", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<{ skills?: Ay0SkillOption[] }> : { skills: [] })
+      .then((data) => {
+        if (active) setSkills(data.skills ?? [])
+      })
+      .catch(() => {
+        if (active) setSkills([])
+      })
+    return () => { active = false }
+  }, [])
 
   const selectRuntime = (next: LocalRuntimeId) => {
     setRuntime(next)
@@ -79,12 +96,12 @@ export function AgentPanel() {
       { id: crypto.randomUUID(), who: "You", self: true, text: prompt },
     ])
 
-    const result = await runAgent({ runtime, prompt, model, effort })
+    const result = await runAgent({ runtime, prompt, model, effort, mode, skills: selectedSkill ? [selectedSkill] : [] })
     setMatrixMessages((current) => [
       ...current,
       {
         id: crypto.randomUUID(),
-        who: "Ayo",
+        who: "AY.0",
         role: runtime === "codex" ? "via Codex" : "via Claude Code",
         text: result.output,
       },
@@ -120,7 +137,7 @@ export function AgentPanel() {
 
         <button className="mt-1.5 flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-text transition-colors hover:bg-hover">
           {chatTab === "matrix" ? <Bot className="size-3.5 shrink-0 text-accent" /> : <Radio className="size-3.5 shrink-0 text-accent" />}
-          <span className="truncate">{chatTab === "matrix" ? "Ayo 1.0 · Matrix Operator" : "Workflow · Launch Campaign"}</span>
+          <span className="truncate">{chatTab === "matrix" ? "AY.0 · Matrix Operator" : "Workflow · Launch Campaign"}</span>
           <ChevronDown className="size-3.5 shrink-0 text-text-faint" />
         </button>
 
@@ -168,6 +185,15 @@ export function AgentPanel() {
                 {(["low", "medium", "high", "xhigh"] as AgentEffort[]).map((value) => <option key={value} value={value}>{value}</option>)}
               </select>
             </div>
+            <select
+              value={selectedSkill}
+              onChange={(event) => setSelectedSkill(event.target.value)}
+              aria-label="AY.0 skill"
+              className="h-7 w-full rounded-md border border-line bg-void px-1.5 text-[10px] text-text-muted focus:outline-none"
+            >
+              <option value="">No optional skill</option>
+              {skills.map((skill) => <option key={skill.name} value={skill.name}>{skill.name}</option>)}
+            </select>
           </div>
         ) : null}
       </div>
@@ -197,7 +223,7 @@ export function AgentPanel() {
           <>
             <SystemLine text={`${runtime === "codex" ? "Codex" : "Claude Code"} selected · ${mode} mode · ${effort} effort`} />
             {matrixMessages.map((message) => <Message key={message.id} {...message} />)}
-            {sending ? <SystemLine text="Ayo is working in the local runtime" loading /> : null}
+            {sending ? <SystemLine text="AY.0 is working in the local runtime" loading /> : null}
           </>
         ) : (
           <>
@@ -221,12 +247,12 @@ export function AgentPanel() {
               }
             }}
             rows={2}
-            placeholder={chatTab === "matrix" ? 'Prompt Ayo, or say "Ayo"…' : 'Prompt the team, or say "Elliana"…'}
+            placeholder={chatTab === "matrix" ? 'Prompt AY.0, or say "AY.0"…' : 'Prompt the team, or say "Elliana"…'}
             className="max-h-40 min-h-9 w-full resize-none bg-transparent px-1.5 py-1 text-sm text-text placeholder:text-text-faint focus:outline-none"
           />
           <div className="mt-1 flex items-center gap-1">
             <IconBtn title="Attach"><Paperclip className="size-4" /></IconBtn>
-            <IconBtn title={chatTab === "matrix" ? "Voice prompt (Ayo)" : "Voice prompt (Elliana)"}><Mic className="size-4" /></IconBtn>
+            <IconBtn title={chatTab === "matrix" ? "Voice prompt (AY.0)" : "Voice prompt (Elliana)"}><Mic className="size-4" /></IconBtn>
             <button
               onClick={() => setHumeLive((value) => !value)}
               title="Hume live voice"
@@ -251,7 +277,7 @@ export function AgentPanel() {
         {humeLive ? (
           <div className="mt-1.5 flex items-center gap-2 px-1 text-[11px] text-accent-soft">
             <AudioLines className="size-3.5 animate-pulse" />
-            {chatTab === "matrix" ? "Ayo is listening — speak naturally." : "Elliana is live — speak naturally, she's coordinating the team."}
+            {chatTab === "matrix" ? "AY.0 is listening — speak naturally." : "Elliana is live — speak naturally, she's coordinating the team."}
           </div>
         ) : null}
       </div>

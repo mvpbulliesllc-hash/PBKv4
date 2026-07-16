@@ -57,7 +57,7 @@ export function RuntimeTerminal({ runtime, onCollapse }: { runtime: LocalRuntime
           ) : (
             <div className="space-y-1.5 text-text-faint">
               <p>$ {isCodex ? "codex exec" : "claude -p"}</p>
-              <p>Waiting for Ayo to dispatch a Matrix ENV prompt.</p>
+              <p>Waiting for AY.0 to dispatch a Matrix ENV prompt.</p>
               <p className="text-[10px]">Workspace: PBKv4 Operator OS</p>
             </div>
           )}

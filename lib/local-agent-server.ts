@@ -6,6 +6,8 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import { promisify } from "node:util"
 import type { AgentEffort, LocalRuntimeId, RuntimeStatus } from "./local-agent-types"
+import type { Ay0Mode } from "./ay0/types"
+import { buildAy0Prompt } from "./ay0/orchestrator"
 
 const execFileAsync = promisify(execFile)
 
@@ -72,13 +74,17 @@ export async function runLocalAgent(input: {
   prompt: string
   model: string
   effort: AgentEffort
+  mode: Ay0Mode
+  skills: string[]
 }) {
   const runtime = RUNTIMES[input.runtime]
   const modelArgs = input.model === "default" ? [] : ["--model", input.model]
+  const prompt = await buildAy0Prompt({ objective: input.prompt, mode: input.mode, skills: input.skills })
   const args = input.runtime === "codex"
     ? [
         "exec",
         "--ephemeral",
+        "--ignore-user-config",
         "--color",
         "never",
         "--sandbox",
@@ -88,7 +94,7 @@ export async function runLocalAgent(input: {
         ...modelArgs,
         "-c",
         `model_reasoning_effort="${input.effort}"`,
-        input.prompt,
+        prompt,
       ]
     : [
         "-p",
@@ -100,14 +106,28 @@ export async function runLocalAgent(input: {
         ...modelArgs,
         "--effort",
         input.effort,
-        input.prompt,
+        prompt,
       ]
 
-  const { stdout, stderr } = await execFileAsync(runtime.bin, args, {
-    cwd: process.cwd(),
-    timeout: 180_000,
-    maxBuffer: 2_000_000,
-  })
+  let stdout = ""
+  let stderr = ""
+  try {
+    const result = await execFileAsync(runtime.bin, args, {
+      cwd: process.cwd(),
+      timeout: 180_000,
+      killSignal: "SIGKILL",
+      maxBuffer: 2_000_000,
+    })
+    stdout = result.stdout
+    stderr = result.stderr
+  } catch (error) {
+    const failure = error as { killed?: boolean; signal?: string; code?: string | number }
+    if (failure.killed || failure.signal === "SIGKILL") {
+      throw new Error(`${runtime.label} timed out after 180 seconds.`)
+    }
+    const code = failure.code ? ` (${String(failure.code)})` : ""
+    throw new Error(`${runtime.label} failed${code}. Check local authentication and runtime logs.`)
+  }
 
   return (stdout || stderr).trim()
 }

@@ -29,3 +29,24 @@ bash scripts/secret-scan.sh
 ```
 
 For any frontend-source change, also run the browser regression flow against the approved landing and Workbench baselines.
+
+## Agent skills
+
+### Issue tracker
+
+PBKv4 work is tracked in GitHub Issues; pull requests are not a request surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the canonical `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix` labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context Operator OS repository with root context and system-wide ADRs. See `docs/agents/domain.md`.
+
+## AY.0 operating boundary
+
+- AY.0 is the only apex agent. Do not copy its complete tool or credential grants into roster agents.
+- AY.0 must identify itself honestly as AI when asked.
+- AY.0 never invents prices, warranty terms, insurance outcomes, or timelines. Unknown facts are escalated to a human operator.
+- Ship approved work directly to `main`; this repository does not require pull requests unless the operator explicitly asks for one.

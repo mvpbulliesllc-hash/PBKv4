@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import type {
   AgentEffort,
+  Ay0RunMode,
   LocalRuntimeId,
   RuntimeRun,
   RuntimeStatus,
@@ -17,6 +18,8 @@ type LocalAgentContextValue = {
     prompt: string
     model: string
     effort: AgentEffort
+    mode: Ay0RunMode
+    skills: string[]
   }) => Promise<RuntimeRun>
 }
 
@@ -49,6 +52,8 @@ export function LocalAgentProvider({ children }: { children: React.ReactNode }) 
     prompt: string
     model: string
     effort: AgentEffort
+    mode: Ay0RunMode
+    skills: string[]
   }) => {
     const run: RuntimeRun = {
       id: crypto.randomUUID(),

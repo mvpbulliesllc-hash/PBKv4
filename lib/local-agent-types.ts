@@ -2,6 +2,14 @@ export type LocalRuntimeId = "codex" | "claude"
 
 export type AgentEffort = "low" | "medium" | "high" | "xhigh"
 
+export type Ay0RunMode = "single" | "swarm" | "team" | "cron"
+
+export type Ay0SkillOption = {
+  name: string
+  description: string
+  source: "workspace" | "operator"
+}
+
 export type RuntimeStatus = {
   id: LocalRuntimeId
   label: string
@@ -17,6 +25,8 @@ export type RuntimeRun = {
   prompt: string
   model: string
   effort: AgentEffort
+  mode?: Ay0RunMode
+  skills?: string[]
   output: string
   startedAt: string
   finishedAt?: string
