@@ -1,78 +1,101 @@
-# Paragon Exteriors — Marketing Website
+# FullStackHero — Admin
 
-The public marketing site for **Paragon Exteriors LLC** (paragonexteriorsnj.com): a ~150-page,
-SEO/GEO-optimized static site built with **Astro 5 + Tailwind 4**, wired into the FSH.Starter
-backend's **Crm module** for lead capture.
+Operator console for the FullStackHero .NET Starter Kit. Built with React 19, Vite 7, TypeScript, TanStack Query, React Router and Tailwind 4 + shadcn/ui.
 
-## Quick start
+This is a **standalone Vite app** — not part of a pnpm workspace — so it can be mounted into .NET Aspire as a plain `ExecutableResource` without monorepo friction.
+
+## Prerequisites
+
+- Node.js 20+
+- The API running locally (`dotnet run --project src/Host/FSH.Starter.Api`, defaults to `http://localhost:5030`)
+
+## Install & run
+
+Two options — pick whichever matches how you want to develop.
+
+### Option A — run everything through Aspire (recommended)
+
+The AppHost launches Postgres, Redis, MinIO, the API, **and** this Vite app together, with `VITE_API_BASE_URL` wired via service discovery.
 
 ```bash
-npm install
-npm run dev        # http://localhost:4321
-npm run build      # static build → dist/
+npm install --prefix clients/admin   # one-time
+dotnet run --project src/Host/FSH.Starter.AppHost
 ```
 
-## Architecture
+Aspire dashboard will expose `fsh-admin` on <http://localhost:5173>.
 
-| Piece | Where |
-|---|---|
-| Business identity (NAP, license, socials) | `src/config/business.ts` — single source of truth |
-| Integration switches (Mux, CRM, GA4, voice) | `.env` → see `.env.example` |
-| Content collections (services/towns/combos/posts) | `src/content/` + `src/content.config.ts` |
-| Page templates | `src/pages/[service]/…`, `src/pages/service-areas/…`, `src/pages/blog/…` |
-| JSON-LD builders (RoofingContractor/Service/FAQ/Article/Breadcrumb) | `src/lib/schema.ts` |
-| GEO endpoints | `/llms.txt`, `/llms-full.txt` (generated from all content) |
-| Lead capture → CRM | `src/components/LeadForm.astro` → `POST {PUBLIC_LEADS_API}` with `tenant` header; UTM/referrer first-touch attribution included |
+### Option B — run the frontend standalone
 
-### URL structure
+Useful when the API is already running elsewhere (container, remote).
 
-- `/{service}/` — service pillars (e.g. `/roof-replacement/`)
-- `/{service}/{town}/` — money pages (e.g. `/roof-replacement/toms-river/`), generated from `src/content/combos/`
-- `/service-areas/{town}/` — town hubs
-- `/blog/{slug}/` — guides
+```bash
+cd clients/admin
+npm install
+npm run dev          # http://localhost:5173
+```
 
-## Media assets (one-time fetch)
+The dev server proxies `/api`, `/openapi`, and `/scalar` to `VITE_API_BASE_URL` (default `http://localhost:5030`), so browser requests stay same-origin.
 
-The remote build environment can't reach the media CDNs, so assets are pulled by the
-**Fetch Website Assets** GitHub Action (`.github/workflows/fetch-assets.yml`), which downloads
-everything in `scripts/asset-manifest.json` (brand imagery, the previous site's real drone
-project photos, team photos, and the hero reel), optimizes it, and commits to
-`clients/website/public/media/`. Run it from the Actions tab against this branch if media is missing.
+## Scripts
 
-## Launch runbook (do these once at go-live)
+| Script            | Purpose                              |
+|-------------------|--------------------------------------|
+| `npm run dev`     | Vite dev server on port 5173         |
+| `npm run build`   | `tsc -b` + `vite build` → `dist/`    |
+| `npm run preview` | Preview the production build         |
+| `npm run lint`    | ESLint (flat config)                 |
 
-1. **Mux hero**: upload `public/media/hero-reel.mp4` (the "30 roofs / 30 days" reel) at
-   [dashboard.mux.com](https://dashboard.mux.com) → copy the playback ID → set `PUBLIC_MUX_PLAYBACK_ID`.
-   Until then the hero uses the local video fallback automatically.
-2. **CRM**: deploy the FSH.Starter API, set `PUBLIC_LEADS_API=https://<api-host>/api/v1/crm/leads`
-   and `PUBLIC_TENANT` (default `root`). Leads then appear in the admin app's Leads section.
-3. **DNS/hosting**: deploy to Vercel. **This is a monorepo — set the Vercel project's
-   Root Directory to `clients/website`** (Settings → Build and Deployment → Root Directory), then
-   Vercel auto-detects Astro and uses `clients/website/vercel.json` (301s from old Wix URLs + cache
-   headers). Without that setting Vercel builds from the repo root and returns `404: NOT_FOUND` on
-   every route; the root-level `vercel.json` is a fallback that builds the site from root, but
-   setting Root Directory is preferred. Point paragonexteriorsnj.com at the deployment.
-4. **Google Search Console**: verify the domain, submit `/sitemap-index.xml`, request indexing for
-   the homepage + service pillars. **The old Wix site shipped `noindex` on every page** — after
-   launch, confirm no route carries `noindex` (only `/thank-you/` does, intentionally).
-5. **Google Business Profile**: create/claim the GBP for Paragon Exteriors LLC, category "Roofing
-   contractor", service-area business (Ocean/Monmouth County), same NAP as `business.ts`,
-   link the site, start the review-generation habit (ask every Won customer).
-   Also correct/claim the stray Yelp listing that duplicates a Wisconsin company's text.
-6. **GA4**: create a property, set `PUBLIC_GA4_ID`. Add an "AI Traffic" channel group with regex
-   `chatgpt\.com|perplexity\.ai|claude\.ai|gemini\.google\.com|copilot\.microsoft\.com` placed
-   above Referral to measure AI-search referrals. Conversion events already fire:
-   `generate_lead` (form submit) and `conversion_thank_you` (thank-you page).
-7. **Voice agent**: see `docs/voice-agent.md` (Hume EVI phone answering + optional web widget).
-8. **Socials**: fix the Facebook page link in `src/config/business.ts` if the real page URL
-   differs (`facebook.com/paragonexteriorsnj` is assumed; the old site linked a Wix placeholder).
+## Configuration
 
-## Content conventions
+Environment variables are read via `import.meta.env` and surfaced through `src/env.ts`:
 
-Every content file's frontmatter is validated by zod (`src/content.config.ts`) at build time —
-`metaDescription` is capped at 175 chars, FAQs become FAQPage JSON-LD automatically, and internal
-links must use existing slugs (the build fails on schema violations, not on broken links — run
-a link checker before big content changes).
+| Variable                  | Default                  | Purpose                                       |
+|---------------------------|--------------------------|-----------------------------------------------|
+| `VITE_API_BASE_URL`       | `http://localhost:5030`  | API origin used by the dev proxy              |
+| `VITE_DEFAULT_TENANT`     | `root`                   | Default tenant header for unauthenticated calls |
 
-**Do not invent facts in content**: no awards, certifications, or review counts that aren't real.
-The license number NJ HIC #13VH13814500 and the phone number live in `business.ts` only.
+Create `.env.local` to override locally.
+
+## Structure
+
+```
+src/
+├── api/                # Typed API client functions (per backend feature)
+├── auth/               # Token store, JWT decode, auth context, protected route
+├── components/
+│   ├── layout/         # Sidebar, Topbar, AppShell
+│   └── ui/             # shadcn primitives (Button, Card, Input, Label, Table)
+├── lib/
+│   ├── api-client.ts   # fetch wrapper: auth header, tenant header, single-flight refresh
+│   ├── query-client.ts # TanStack QueryClient
+│   └── cn.ts           # clsx + tailwind-merge
+├── pages/              # Route-level components
+├── styles/globals.css  # Tailwind 4 CSS-first + shadcn CSS variables
+├── App.tsx             # Provider tree (QueryClient, Auth, Router)
+├── main.tsx            # React entry
+└── routes.tsx          # Route definitions
+```
+
+## Authentication flow
+
+1. `POST /api/v1/identity/token/issue` with `{ email, password }` plus `tenant` header.
+2. Access + refresh tokens are stored in `localStorage` (keys prefixed `fsh.admin.`).
+3. The API client attaches `Authorization: Bearer <access>` and `tenant: <slug>` on every call.
+4. On `401`, a single-flight refresh call hits `POST /api/v1/identity/token/refresh`, retries the original request, and logs the user out if the refresh fails.
+
+## Styling
+
+- Tailwind 4 CSS-first config lives in `src/styles/globals.css` (no `tailwind.config.ts`).
+- Colors use shadcn/ui oklch CSS variables; dark mode is toggled via the `.dark` class on `<html>`.
+- shadcn components follow the **new-york** style; `components.json` is present for `npx shadcn add ...`.
+
+## Adding a new page
+
+1. Add the API function in `src/api/<feature>.ts`.
+2. Add the page component in `src/pages/<feature>/<name>.tsx`.
+3. Register it in `src/routes.tsx` as a child of the `AppShell` route.
+4. Add a nav entry in `src/components/layout/sidebar.tsx`.
+
+## Production build
+
+`npm run build` emits a static bundle to `dist/`. Host it behind any static web server (nginx, Caddy, Azure Static Web Apps, CloudFront, …). Configure the reverse proxy to forward `/api/*` to the backend and serve `index.html` as the SPA fallback for unmatched routes.
