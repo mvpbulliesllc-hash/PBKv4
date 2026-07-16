@@ -20,3 +20,11 @@ Horizon Pro is a local design and implementation reference. Its example authenti
 ## Frontend boundary
 
 The existing Command Center remains frozen. Real services replace fixture readers behind stable typed contracts. No provider SDK or privileged credential is imported into a client component.
+
+## Matrix ENV local runtime bridge
+
+- Matrix ENV dispatches Ayo prompts to the locally installed Codex and Claude Code CLIs through server-only route handlers.
+- The bridge accepts requests only from the loopback development server and is disabled in production builds.
+- Codex runs with `workspace-write`; Claude Code runs with `acceptEdits`. Neither runtime receives a dangerous permission-bypass flag.
+- Provider and connector credentials remain server-side environment values. The browser receives runtime status and sanitized command output only.
+- Deployed Vercel instances require a separately authenticated remote worker before Matrix ENV can execute agent commands outside the local Mac.

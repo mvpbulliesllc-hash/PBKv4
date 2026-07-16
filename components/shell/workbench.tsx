@@ -9,6 +9,8 @@ import { AgentPanel } from "./agent-panel"
 import { PanelContainer } from "./panel-container"
 import { TopBar } from "./top-bar"
 import type { ModuleId } from "./module-registry"
+import { LocalAgentProvider } from "./local-agent-context"
+import { RuntimeTerminal } from "./runtime-terminal"
 
 export function Workbench() {
   const leftRef = useRef<ImperativePanelHandle>(null)
@@ -16,13 +18,14 @@ export function Workbench() {
   const dockRef = useRef<ImperativePanelHandle>(null)
 
   const [leftCollapsed, setLeftCollapsed] = useState(false)
-  const [rightCollapsed, setRightCollapsed] = useState(true)
+  const [rightCollapsed, setRightCollapsed] = useState(false)
   const [dockCollapsed, setDockCollapsed] = useState(false)
   const [active, setActive] = useState("ws-gmail")
   const [hubId, setHubId] = useState("workspace")
   const [mainModule, setMainModule] = useState<ModuleId>("gmail")
 
   return (
+    <LocalAgentProvider>
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background">
       <TopBar
         rightCollapsed={rightCollapsed}
@@ -42,7 +45,7 @@ export function Workbench() {
           </FloatingOpener>
         ) : null}
 
-        <ResizablePanelGroup direction="horizontal" autoSaveId="obsidian-shell-h">
+        <ResizablePanelGroup direction="horizontal" autoSaveId="operator-os-matrix-h-v1">
           {/* LEFT — navigation (0–20%) */}
           <ResizablePanel
             ref={leftRef}
@@ -69,7 +72,7 @@ export function Workbench() {
           <ResizableHandle />
 
           {/* MIDDLE — agent chat (10–35%) */}
-          <ResizablePanel id="agents" order={2} defaultSize={24} minSize={10} maxSize={35}>
+          <ResizablePanel id="agents" order={2} defaultSize={24} minSize={22} maxSize={35}>
             <AgentPanel />
           </ResizablePanel>
 
@@ -128,22 +131,27 @@ export function Workbench() {
             id="rightcfg"
             order={4}
             defaultSize={18}
-            minSize={12}
+            minSize={18}
             maxSize={28}
             collapsible
             collapsedSize={0}
             onCollapse={() => setRightCollapsed(true)}
             onExpand={() => setRightCollapsed(false)}
           >
-            <PanelContainer
-              defaultModule="config"
-              collapseIcon="panel"
-              onCollapse={() => rightRef.current?.collapse()}
-            />
+            <ResizablePanelGroup direction="vertical" autoSaveId="matrix-env-runtimes-v">
+              <ResizablePanel id="codex-env" order={1} defaultSize={50} minSize={24}>
+                <RuntimeTerminal runtime="codex" onCollapse={() => rightRef.current?.collapse()} />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel id="claude-env" order={2} defaultSize={50} minSize={24}>
+                <RuntimeTerminal runtime="claude" />
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
     </div>
+    </LocalAgentProvider>
   )
 }
 
