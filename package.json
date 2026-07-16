@@ -1,33 +1,21 @@
 {
-  "name": "obsidian-workbench-shell",
-  "version": "0.1.0",
-  "private": true,
+  "name": "paragon-website",
   "type": "module",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.18",
-    "@clerk/themes": "^2.4.57",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.475.0",
-    "next": "^16.0.0",
-    "next-auth": "5.0.0-beta.29",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-resizable-panels": "^2.1.7",
-    "tailwind-merge": "^2.5.5"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.11",
-    "@types/node": "^22.10.1",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^4.1.11",
-    "typescript": "^5.7.2"
+    "@astrojs/sitemap": "^3.4.1",
+    "@fontsource-variable/archivo": "^5.2.5",
+    "@fontsource-variable/inter": "^5.2.5",
+    "@mux/mux-player": "^3.5.1",
+    "@tailwindcss/vite": "^4.1.11",
+    "astro": "^5.12.0",
+    "tailwindcss": "^4.1.11"
   }
 }
