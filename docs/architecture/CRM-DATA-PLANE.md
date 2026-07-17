@@ -6,13 +6,13 @@ PBKv4 owns an isolated CRM backend. The approved dashboard remains visually froz
 
 | Concern | Implementation | Contract |
 | --- | --- | --- |
-| Postgres runtime | Neon pooled connection through `@neondatabase/serverless` | `DATABASE_URL` |
-| Schema migrations | Drizzle Kit against the direct connection | `DATABASE_URL_UNPOOLED` |
+| Postgres runtime | Neon pooled connection through `@neondatabase/serverless` | `DATABASE_URL`, `pbk4_POSTGRES_URL`, or `POSTGRES_URL` |
+| Schema migrations | Drizzle Kit against the direct connection | `DATABASE_URL_UNPOOLED`, `pbk4_POSTGRES_URL_NON_POOLING`, or `POSTGRES_URL_NON_POOLING` |
 | CRM data | Tenant-scoped contacts, pipelines, stages, deals, activities, tasks, attachments | `lib/db/schema.ts` |
 | File objects | Vercel Blob server upload | `BLOB_READ_WRITE_TOKEN` or `pbk4_READ_WRITE_TOKEN` |
 | Service access | Loopback during local development or an internal bearer token | `PBKV4_INTERNAL_API_TOKEN` |
 
-The lowercase `pbk4_*` Blob variables are accepted because the existing Vercel store uses that prefix. Standard `BLOB_*` variables are preferred for future stores.
+The lowercase `pbk4_*` Postgres and Blob variables are accepted because the existing Vercel resources use that prefix. Standard unprefixed variables remain supported for future resources.
 
 ## API contracts
 

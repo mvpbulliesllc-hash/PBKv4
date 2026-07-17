@@ -1,9 +1,14 @@
 import { defineConfig } from "drizzle-kit"
 
-const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL
+const url = process.env.DATABASE_URL_UNPOOLED
+  ?? process.env.pbk4_POSTGRES_URL_NON_POOLING
+  ?? process.env.POSTGRES_URL_NON_POOLING
+  ?? process.env.DATABASE_URL
+  ?? process.env.pbk4_POSTGRES_URL
+  ?? process.env.POSTGRES_URL
 
 if (!url) {
-  throw new Error("DATABASE_URL_UNPOOLED or DATABASE_URL is required for database migrations.")
+  throw new Error("A supported Postgres migration URL is required for database migrations.")
 }
 
 export default defineConfig({
