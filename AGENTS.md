@@ -12,7 +12,7 @@ Backend and integration work must preserve the typed view models consumed by the
 
 - `app/`, `components/`, `lib/`, and `public/` contain the deployed Command Center.
 - Server credentials are never exposed to browser code or committed files.
-- Supabase is the planned authentication, PostgreSQL, storage, and tenant-isolation foundation.
+- Neon PostgreSQL is the CRM system of record; Vercel Blob is the file-object layer. Authentication remains a separate company-only boundary.
 - Native connectors and skills are preferred first, Composio second, direct provider APIs third, and n8n for multi-step orchestration.
 - Horizon Pro is local reference material only. Do not copy its paid source or root application into this public repository.
 - n8n workflow exports must be sanitized and curated individually before they are committed.
