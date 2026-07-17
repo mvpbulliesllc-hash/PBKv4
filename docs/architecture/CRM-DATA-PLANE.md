@@ -16,12 +16,12 @@ The lowercase `pbk4_*` Blob variables are accepted because the existing Vercel s
 
 ## API contracts
 
-- `GET /api/crm/health` verifies the Neon connection.
+- `GET /api/crm/health` is a data-free readiness probe that reports `ready`, `needs-migration`, or `unavailable`.
 - `GET|POST /api/crm/contacts` lists or creates contacts.
 - `GET|POST /api/crm/deals` lists or creates deals. The first write creates the tenant's default sales pipeline and stages.
 - `POST /api/crm/attachments` accepts multipart form data with `file` and optional `contactId`, `dealId`, and `uploadedBy` fields. Uploads are capped at 25 MB and their metadata is persisted in Postgres.
 
-Production callers send `Authorization: Bearer <PBKV4_INTERNAL_API_TOKEN>`. These routes must not be opened directly to browsers until company authentication is restored.
+Production callers send `Authorization: Bearer <PBKV4_INTERNAL_API_TOKEN>` for every data route. The data-free health probe is public. The remaining routes must not be opened directly to browsers until company authentication is restored.
 
 ## Migration runbook
 
