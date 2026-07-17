@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import {
   Globe,
@@ -713,13 +713,24 @@ function FilesModule() {
 }
 
 function EnvModule() {
+  const [tools, setTools] = useState<Array<{ id: string; label: string; status: string }>>([])
+
+  useEffect(() => {
+    let active = true
+    fetch("/api/ay0/catalog", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<{ tools?: Array<{ id: string; label: string; status: string }> }> : { tools: [] })
+      .then((data) => { if (active) setTools(data.tools ?? []) })
+      .catch(() => { if (active) setTools([]) })
+    return () => { active = false }
+  }, [])
+
   return (
     <Pad>
       <div className="space-y-1.5 font-mono text-xs">
-        {["HUME_API_KEY", "OPENAI_API_KEY", "TWILIO_AUTH_TOKEN", "STRIPE_SECRET_KEY", "NEON_DATABASE_URL"].map((k) => (
-          <div key={k} className="flex items-center justify-between rounded-md border border-line bg-void px-2.5 py-1.5">
-            <span className="text-text-muted">{k}</span>
-            <span className="text-text-faint">••••••••</span>
+        {(tools.length ? tools : [{ id: "vault", label: "AY.0 vault", status: "loading" }]).slice(0, 10).map((tool) => (
+          <div key={tool.id} className="flex items-center justify-between rounded-md border border-line bg-void px-2.5 py-1.5">
+            <span className="truncate text-text-muted">{tool.label}</span>
+            <span className={cn("ml-2 shrink-0 text-[10px]", tool.status === "env-ready" ? "text-live" : tool.status === "quarantined" ? "text-warn" : "text-text-faint")}>{tool.status}</span>
           </div>
         ))}
       </div>
@@ -743,27 +754,28 @@ function WebhooksModule() {
 }
 
 function ConnectorsModule() {
-  const connectors: { label: string; brand: BrandSlug }[] = [
-    { label: "Slack", brand: "slack" },
-    { label: "Notion", brand: "notion" },
-    { label: "HubSpot", brand: "hubspot" },
-    { label: "Gmail", brand: "gmail" },
-    { label: "Drive", brand: "google-drive" },
-    { label: "Stripe", brand: "stripe" },
-    { label: "Zoom", brand: "zoom" },
-    { label: "WhatsApp", brand: "whatsapp" },
-  ]
+  const [connectors, setConnectors] = useState<Array<{ capability: string; label: string; status: string }>>([])
+
+  useEffect(() => {
+    let active = true
+    fetch("/api/ay0/connectors/health", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<{ connectors?: Array<{ capability: string; label: string; status: string }> }> : { connectors: [] })
+      .then((data) => { if (active) setConnectors(data.connectors ?? []) })
+      .catch(() => { if (active) setConnectors([]) })
+    return () => { active = false }
+  }, [])
+
   return (
     <Pad>
       <div className="grid grid-cols-2 gap-2">
-        {connectors.map((c) => (
+        {(connectors.length ? connectors : [{ capability: "loading", label: "Checking vault", status: "loading" }]).map((connector) => (
           <button
-            key={c.label}
+            key={connector.capability}
             className="flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-2 text-xs text-text-muted transition-colors hover:border-line-strong hover:bg-hover hover:text-text"
           >
-            <BrandIcon slug={c.brand} size={16} />
-            <span className="min-w-0 flex-1 truncate text-left">{c.label}</span>
-            <span className="size-1.5 shrink-0 rounded-full bg-live" />
+            <Waypoints className="size-4 shrink-0 text-text-faint" />
+            <span className="min-w-0 flex-1 truncate text-left">{connector.label}</span>
+            <span className={cn("size-1.5 shrink-0 rounded-full", connector.status === "authenticated" ? "bg-live" : connector.status === "env-ready" ? "bg-info" : "bg-warn")} />
           </button>
         ))}
       </div>

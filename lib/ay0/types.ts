@@ -16,4 +16,5 @@ export type Ay0ToolStatus = {
   boundary: "apex-only"
   configured: boolean
   configuration: string
+  status: "env-ready" | "missing-env" | "denied" | "manual" | "quarantined" | "not-wired"
 }

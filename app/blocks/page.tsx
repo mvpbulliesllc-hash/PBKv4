@@ -2,8 +2,8 @@ import Link from "next/link"
 
 const blocks = [
   ["ai-workflow-status-01", "installed"],
-  ["ai-assistant-panel", "credential required"],
-  ["ai-chat-streaming-01", "credential required"],
+  ["ai-assistant-panel", "installed"],
+  ["ai-chat-streaming-01", "installed"],
   ["ai-multi-step-agent-01", "installed"],
   ["ai-image-generator-01", "installed"],
   ["ai-video-generator-01", "installed"],

@@ -1,0 +1,20 @@
+{
+  "capabilities": {
+    "llm.openai": { "label": "OpenAI models", "env": ["OPENAI_API_KEY"], "seats": ["Ay.0"], "status": "live", "probe": "openai" },
+    "llm.anthropic": { "label": "Anthropic models", "env": ["ANTHROPIC_API_KEY"], "seats": ["Ay.0"], "status": "live", "probe": "anthropic" },
+    "llm.openrouter": { "label": "OpenRouter", "env": ["OPENROUTER_API_KEY"], "seats": ["Ay.0"], "status": "live", "probe": "openrouter" },
+    "llm.gemini": { "label": "Google Gemini", "env": ["GEMINI_API_KEY", "GEMINI_PROJECT_ID"], "seats": ["Ay.0"], "status": "live", "probe": "gemini" },
+    "llm.nous": { "label": "Nous Research", "env": ["NOUS_API_KEY"], "seats": ["Ay.0"], "status": "live" },
+    "llm.nvidia": { "label": "NVIDIA NIM", "env": ["NVIDIA_API_KEY"], "seats": ["Ay.0"], "status": "live" },
+    "scrape.firecrawl": { "label": "Firecrawl", "env": ["FIRECRAWL_API_KEY"], "seats": ["Ay.0"], "status": "live", "probe": "firecrawl" },
+    "scrape.exa": { "label": "Exa search", "env": ["EXA_API_KEY"], "seats": ["Ay.0"], "status": "live" },
+    "agent.composio": { "label": "Composio", "env": ["COMPOSIO_API_KEY", "COMPOSIO_ORG_TOKEN"], "seats": ["Ay.0"], "status": "live", "probe": "composio" },
+    "agent.zen": { "label": "Zen", "env": ["ZEN_API_KEY"], "seats": ["Ay.0"], "status": "live" },
+    "voice.hume": { "label": "Hume voice", "env": ["HUME_API_KEY", "HUME_SECRET_KEY", "HUME_CONFIG_ID"], "seats": ["runner"], "status": "live", "probe": "hume" },
+    "creative-tim.registry": { "label": "Creative Tim registry", "env": ["CREATIVE_TIM_API_KEY"], "seats": ["Ay.0"], "status": "live", "probe": "creative-tim" },
+    "openclaw.trainer": { "label": "OpenClaw trainer", "env": ["OPENCLAW_AGENT_TRAINER_API_KEY"], "seats": ["Ay.0"], "status": "live" },
+    "infra.vercel": { "label": "Vercel", "env": [], "seats": [], "status": "manual" },
+    "infra.github": { "label": "GitHub", "env": ["GITHUB_PAT"], "seats": [], "status": "quarantined" },
+    "comms.slack": { "label": "Slack", "env": ["SLACK_APP_TOKEN"], "seats": [], "status": "quarantined" }
+  }
+}
