@@ -164,6 +164,14 @@ function Pad({ children }: { children: React.ReactNode }) {
   return <div className="h-full overflow-auto p-3">{children}</div>
 }
 
+function ActionLine({ text }: { text: string }) {
+  return (
+    <p className="mt-2 rounded-md border border-line bg-void px-2.5 py-1.5 text-[11px] text-text-faint">
+      {text}
+    </p>
+  )
+}
+
 /* ------------------------------- comms suite ------------------------------- */
 
 const GMAIL_ACCOUNTS = [
@@ -182,16 +190,26 @@ const GMAIL_THREADS = [
 ]
 
 function GmailModule() {
+  const [account, setAccount] = useState(GMAIL_ACCOUNTS[0].addr)
+  const [tab, setTab] = useState("Primary")
+  const [selected, setSelected] = useState(GMAIL_THREADS[0].subj)
+  const [composing, setComposing] = useState(false)
+  const [notice, setNotice] = useState("Inbox ready")
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Account switcher — many gmails, one app */}
       <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2 py-1.5">
-        {GMAIL_ACCOUNTS.map((a, i) => (
+        {GMAIL_ACCOUNTS.map((a) => (
           <button
             key={a.addr}
+            onClick={() => {
+              setAccount(a.addr)
+              setNotice(`Viewing ${a.addr}`)
+            }}
             className={cn(
               "flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors",
-              i === 0 ? "border-line-strong bg-hover text-text" : "border-line text-text-muted hover:bg-hover/60",
+              account === a.addr ? "border-line-strong bg-hover text-text" : "border-line text-text-muted hover:bg-hover/60",
             )}
           >
             <span className={cn("size-1.5 rounded-full", a.dot)} />
@@ -199,23 +217,58 @@ function GmailModule() {
             {a.unread > 0 ? <span className="text-text-faint">{a.unread}</span> : null}
           </button>
         ))}
-        <button className="grid size-6 shrink-0 place-items-center rounded-md text-text-muted hover:bg-hover hover:text-text">
+        <button
+          onClick={() => setComposing(true)}
+          title="Add mailbox"
+          className="grid size-6 shrink-0 place-items-center rounded-md text-text-muted hover:bg-hover hover:text-text"
+        >
           <Plus className="size-3.5" />
         </button>
       </div>
       <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-1.5 text-[11px] text-text-faint">
-        <span className="rounded bg-hover px-1.5 py-0.5 text-text-muted">All inboxes</span>
-        <span>Primary</span>
-        <span>Updates</span>
-        <button className="ml-auto flex items-center gap-1 rounded bg-accent px-2 py-1 text-void">
+        {["All inboxes", "Primary", "Updates"].map((item) => (
+          <button
+            key={item}
+            onClick={() => setTab(item)}
+            className={cn("rounded px-1.5 py-0.5", tab === item ? "bg-hover text-text-muted" : "hover:bg-hover/60")}
+          >
+            {item}
+          </button>
+        ))}
+        <button
+          onClick={() => setComposing((value) => !value)}
+          className="ml-auto flex items-center gap-1 rounded bg-accent px-2 py-1 text-void"
+        >
           <Mail className="size-3" /> Compose
         </button>
       </div>
+      {composing ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            setComposing(false)
+            setNotice(`Draft staged from ${account}`)
+          }}
+          className="border-b border-line bg-void p-2"
+        >
+          <input placeholder="To" className="mb-1 w-full rounded border border-line bg-panel px-2 py-1 text-xs text-text placeholder:text-text-faint focus:outline-none" />
+          <input placeholder="Subject" className="mb-1 w-full rounded border border-line bg-panel px-2 py-1 text-xs text-text placeholder:text-text-faint focus:outline-none" />
+          <textarea rows={2} placeholder="Message" className="w-full resize-none rounded border border-line bg-panel px-2 py-1 text-xs text-text placeholder:text-text-faint focus:outline-none" />
+          <button className="mt-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">Stage draft</button>
+        </form>
+      ) : null}
       <div className="min-h-0 flex-1 overflow-auto">
         {GMAIL_THREADS.map((t) => (
-          <div
+          <button
             key={t.subj}
-            className="flex cursor-pointer items-center gap-2.5 border-b border-line/60 px-3 py-2 transition-colors hover:bg-hover/50"
+            onClick={() => {
+              setSelected(t.subj)
+              setNotice(`Opened ${t.from}: ${t.subj}`)
+            }}
+            className={cn(
+              "flex w-full cursor-pointer items-center gap-2.5 border-b border-line/60 px-3 py-2 text-left transition-colors hover:bg-hover/50",
+              selected === t.subj ? "bg-hover/60" : "",
+            )}
           >
             <Star className="size-3.5 shrink-0 text-text-faint" />
             <span className={cn("size-1.5 shrink-0 rounded-full", t.acct)} />
@@ -226,24 +279,33 @@ function GmailModule() {
               {t.subj}
             </span>
             <span className="shrink-0 text-[10px] text-text-faint">{t.time}</span>
-          </div>
+          </button>
         ))}
       </div>
+      <div className="shrink-0 border-t border-line px-3 py-1.5 text-[11px] text-text-faint">{notice}</div>
     </div>
   )
 }
 
 function GChatModule() {
   const rooms = ["# founders", "# ops-war-room", "# agents-live", "@ Hermes", "@ Athena"]
+  const [room, setRoom] = useState(rooms[1])
+  const [messages, setMessages] = useState([
+    { who: "Hermes", text: "Batch #7 done. 41 replies staged for your review.", tone: "accent" as const },
+    { who: "You", text: "Approve the top 20, hold the rest." },
+    { who: "Hermes", text: "Copy. Dispatching Athena to send now.", tone: "accent" as const },
+  ])
+
   return (
     <div className="flex h-full">
       <div className="w-32 shrink-0 space-y-0.5 border-r border-line p-2">
-        {rooms.map((r, i) => (
+        {rooms.map((r) => (
           <button
             key={r}
+            onClick={() => setRoom(r)}
             className={cn(
               "flex w-full items-center rounded-md px-2 py-1 text-left text-[11px] transition-colors",
-              i === 1 ? "bg-hover text-text" : "text-text-muted hover:bg-hover/60",
+              room === r ? "bg-hover text-text" : "text-text-muted hover:bg-hover/60",
             )}
           >
             <span className="truncate">{r}</span>
@@ -252,17 +314,23 @@ function GChatModule() {
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3 text-xs">
-          <Bubble who="Hermes" tone="accent">Batch #7 done — 41 replies staged for your review.</Bubble>
-          <Bubble who="You">Approve the top 20, hold the rest.</Bubble>
-          <Bubble who="Hermes" tone="accent">Copy. Dispatching Athena to send now.</Bubble>
+          <p className="text-[10px] uppercase tracking-wide text-text-faint">{room}</p>
+          {messages.map((message, index) => (
+            <Bubble key={`${message.who}-${index}`} who={message.who} tone={message.tone}>{message.text}</Bubble>
+          ))}
         </div>
-        <ComposerBar placeholder="Message ops-war-room…" />
+        <ComposerBar
+          placeholder={`Message ${room}...`}
+          onSend={(text) => setMessages((current) => [...current, { who: "You", text }])}
+        />
       </div>
     </div>
   )
 }
 
 function GVoiceModule() {
+  const [dial, setDial] = useState("")
+  const [status, setStatus] = useState("Voice bridge idle")
   const calls = [
     { name: "Acme Corp", num: "+1 415 555 0142", dir: "in", time: "9:12" },
     { name: "Missed — Unknown", num: "+1 702 555 0199", dir: "miss", time: "8:40" },
@@ -272,8 +340,18 @@ function GVoiceModule() {
     <Pad>
       <div className="mb-2 flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-1.5">
         <Phone className="size-3.5 text-text-faint" />
-        <input placeholder="Dial or search…" className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none" />
-        <button className="grid size-6 place-items-center rounded bg-accent text-void"><PhoneCall className="size-3.5" /></button>
+        <input
+          value={dial}
+          onChange={(event) => setDial(event.target.value)}
+          placeholder="Dial or search..."
+          className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none"
+        />
+        <button
+          onClick={() => setStatus(dial.trim() ? `Calling ${dial.trim()}` : "Enter a number or contact first")}
+          className="grid size-6 place-items-center rounded bg-accent text-void"
+        >
+          <PhoneCall className="size-3.5" />
+        </button>
       </div>
       <div className="space-y-1">
         {calls.map((c) => (
@@ -284,11 +362,14 @@ function GVoiceModule() {
           </div>
         ))}
       </div>
+      <ActionLine text={status} />
     </Pad>
   )
 }
 
 function MessagesModule() {
+  const [filter, setFilter] = useState("All")
+  const [outbox, setOutbox] = useState<string[]>([])
   const channels: { app: string; brand: BrandSlug; who: string; msg: string }[] = [
     { app: "Slack", brand: "slack", who: "#clients", msg: "Acme signed the SOW" },
     { app: "Telegram", brand: "telegram", who: "Vlad", msg: "sent the wallet address" },
@@ -304,15 +385,18 @@ function MessagesModule() {
     { label: "IG", brand: "instagram" },
     { label: "LinkedIn", brand: "linkedin" },
   ]
+  const visible = channels.filter((channel) => filter === "All" || filter === channel.app || (filter === "IG" && channel.app === "Instagram"))
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2 py-1.5 text-[11px] text-text-muted">
-        {filters.map((f, i) => (
+        {filters.map((f) => (
           <button
             key={f.label}
+            onClick={() => setFilter(f.label)}
             className={cn(
               "flex shrink-0 items-center gap-1 rounded px-2 py-0.5",
-              i === 0 ? "bg-hover text-text" : "hover:bg-hover/60",
+              filter === f.label ? "bg-hover text-text" : "hover:bg-hover/60",
             )}
           >
             {f.brand ? <BrandIcon slug={f.brand} size={12} /> : null}
@@ -321,7 +405,7 @@ function MessagesModule() {
         ))}
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
-        {channels.map((c) => (
+        {visible.map((c) => (
           <div key={c.app + c.who} className="flex items-center gap-2.5 border-b border-line/60 px-3 py-2 hover:bg-hover/50">
             <BrandIcon slug={c.brand} size={18} />
             <div className="min-w-0 flex-1">
@@ -330,8 +414,16 @@ function MessagesModule() {
             </div>
           </div>
         ))}
+        {outbox.map((message, index) => (
+          <div key={`${message}-${index}`} className="border-b border-line/60 px-3 py-2 text-xs text-text-muted">
+            You staged: {message}
+          </div>
+        ))}
       </div>
-      <ComposerBar placeholder="Reply from any channel…" />
+      <ComposerBar
+        placeholder="Reply from any channel..."
+        onSend={(text) => setOutbox((current) => [...current, text])}
+      />
     </div>
   )
 }
@@ -339,6 +431,7 @@ function MessagesModule() {
 /* ------------------------------ office suite ------------------------------- */
 
 function OfficeModule() {
+  const [selected, setSelected] = useState("War Room")
   const rooms = [
     { name: "War Room", people: 4, live: true },
     { name: "Client — Acme", people: 2, live: true },
@@ -351,7 +444,11 @@ function OfficeModule() {
         {rooms.map((r) => (
           <button
             key={r.name}
-            className="flex flex-col gap-2 rounded-lg border border-line bg-void p-3 text-left transition-colors hover:border-line-strong"
+            onClick={() => setSelected(r.name)}
+            className={cn(
+              "flex flex-col gap-2 rounded-lg border bg-void p-3 text-left transition-colors hover:border-line-strong",
+              selected === r.name ? "border-line-strong" : "border-line",
+            )}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-text">{r.name}</span>
@@ -363,11 +460,13 @@ function OfficeModule() {
           </button>
         ))}
       </div>
+      <ActionLine text={`Selected room: ${selected}`} />
     </Pad>
   )
 }
 
 function MeetModule() {
+  const [status, setStatus] = useState("Meeting controls ready")
   return (
     <Pad>
       <div className="grid min-h-40 grid-cols-2 gap-1.5">
@@ -378,13 +477,20 @@ function MeetModule() {
         ))}
       </div>
       <div className="mt-2 flex items-center justify-center gap-2">
-        <button className="flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-hover hover:text-text">
+        <button
+          onClick={() => setStatus("Google Meet launch staged")}
+          className="flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-hover hover:text-text"
+        >
           <BrandIcon slug="google-meet" size={14} /> Start Meet
         </button>
-        <button className="flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-hover hover:text-text">
+        <button
+          onClick={() => setStatus("Zoom join staged")}
+          className="flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-hover hover:text-text"
+        >
           <BrandIcon slug="zoom" size={14} /> Join Zoom
         </button>
       </div>
+      <ActionLine text={status} />
     </Pad>
   )
 }
@@ -417,6 +523,18 @@ const PIPE_CARDS: Record<string, { name: string; sub: string; src?: BrandSlug }[
 }
 
 function PipelineModule() {
+  const [cards, setCards] = useState(PIPE_CARDS)
+  const [filterLive, setFilterLive] = useState(false)
+  const [selected, setSelected] = useState("No deal selected")
+  const [newCount, setNewCount] = useState(1)
+
+  const addDeal = () => {
+    const deal = { name: `New intake ${newCount}`, sub: "Manual capture · needs qualification", src: "gmail" as BrandSlug }
+    setCards((current) => ({ ...current, in: [deal, ...(current.in ?? [])] }))
+    setNewCount((count) => count + 1)
+    setSelected(`Created ${deal.name}`)
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* toolbar */}
@@ -425,10 +543,16 @@ function PipelineModule() {
         <span className="text-xs font-medium text-text">Revenue Pipeline</span>
         <span className="text-[11px] text-text-faint">CRM · Inbound · Outbound</span>
         <div className="ml-auto flex items-center gap-1">
-          <button className="flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] text-text-muted hover:bg-hover hover:text-text">
+          <button
+            onClick={() => setFilterLive((value) => !value)}
+            className={cn(
+              "flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] hover:bg-hover hover:text-text",
+              filterLive ? "bg-hover text-text" : "text-text-muted",
+            )}
+          >
             <Filter className="size-3" /> Filter
           </button>
-          <button className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">
+          <button onClick={addDeal} className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">
             <Plus className="size-3" /> New
           </button>
         </div>
@@ -445,23 +569,25 @@ function PipelineModule() {
                 <span className="ml-auto rounded bg-hover px-1.5 text-[10px] text-text-faint">{s.count}</span>
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-auto p-2">
-                {(PIPE_CARDS[s.key] ?? []).map((c) => (
-                  <div
+                {(cards[s.key] ?? []).filter((c) => !filterLive || c.src).map((c) => (
+                  <button
                     key={c.name}
-                    className="rounded-md border border-line bg-void p-2 transition-colors hover:border-line-strong"
+                    onClick={() => setSelected(`${c.name} · ${s.label}`)}
+                    className="w-full rounded-md border border-line bg-void p-2 text-left transition-colors hover:border-line-strong"
                   >
                     <div className="flex items-center gap-1.5">
                       {c.src ? <BrandIcon slug={c.src} size={13} /> : null}
                       <span className="min-w-0 flex-1 truncate text-[11px] text-text">{c.name}</span>
                     </div>
                     <p className="mt-0.5 truncate text-[10px] text-text-faint">{c.sub}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           )
         })}
       </div>
+      <div className="shrink-0 border-t border-line px-3 py-1.5 text-[11px] text-text-faint">{selected}</div>
     </div>
   )
 }
@@ -469,20 +595,35 @@ function PipelineModule() {
 /* ---------------------------- knowledge suite ------------------------------ */
 
 function ContactsModule() {
+  const [query, setQuery] = useState("")
+  const [selected, setSelected] = useState("No contact selected")
   const people = [
     { n: "Sarah Chen", c: "Acme Corp", s: "Deal — $48k", stage: "bg-accent" },
     { n: "Marcus Vega", c: "Paragon", s: "Warm lead", stage: "bg-warn" },
     { n: "Lena Ortiz", c: "Skal", s: "Customer", stage: "bg-info" },
   ]
+  const visible = people.filter((person) =>
+    `${person.n} ${person.c} ${person.s}`.toLowerCase().includes(query.toLowerCase()),
+  )
+
   return (
     <Pad>
       <div className="mb-2 flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-1.5">
         <Search className="size-3.5 text-text-faint" />
-        <input placeholder="Search CRM…" className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search CRM..."
+          className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none"
+        />
       </div>
       <div className="space-y-1">
-        {people.map((p) => (
-          <div key={p.n} className="flex items-center gap-2.5 rounded-md border border-line bg-void px-2.5 py-2">
+        {visible.map((p) => (
+          <button
+            key={p.n}
+            onClick={() => setSelected(`${p.n} · ${p.s}`)}
+            className="flex w-full items-center gap-2.5 rounded-md border border-line bg-void px-2.5 py-2 text-left"
+          >
             <span className="grid size-7 shrink-0 place-items-center rounded-full bg-hover text-[10px] font-semibold text-text">
               {p.n.split(" ").map((x) => x[0]).join("")}
             </span>
@@ -494,9 +635,10 @@ function ContactsModule() {
               <span className={cn("size-1.5 rounded-full", p.stage)} />
               {p.s}
             </span>
-          </div>
+          </button>
         ))}
       </div>
+      <ActionLine text={selected} />
     </Pad>
   )
 }
@@ -551,22 +693,47 @@ function Bubble({ who, tone, children }: { who: string; tone?: "accent"; childre
   )
 }
 
-function ComposerBar({ placeholder }: { placeholder: string }) {
+function ComposerBar({ placeholder, onSend }: { placeholder: string; onSend?: (text: string) => void }) {
+  const [value, setValue] = useState("")
+  const [notice, setNotice] = useState("Ready")
+
+  const send = () => {
+    const text = value.trim()
+    if (!text) {
+      setNotice("Type a message first")
+      return
+    }
+    onSend?.(text)
+    setValue("")
+    setNotice("Message staged locally")
+  }
+
   return (
-    <div className="flex shrink-0 items-center gap-2 border-t border-line px-2.5 py-2">
-      <button className="grid size-7 place-items-center rounded-md text-text-muted hover:bg-hover hover:text-text">
-        <Paperclip className="size-3.5" />
-      </button>
-      <input
-        placeholder={placeholder}
-        className="min-w-0 flex-1 rounded-md border border-line bg-void px-2.5 py-1.5 text-xs text-text placeholder:text-text-faint focus:outline-none"
-      />
-      <button className="grid size-7 place-items-center rounded-md text-text-muted hover:bg-hover hover:text-text">
-        <Mic className="size-3.5" />
-      </button>
-      <button className="grid size-7 place-items-center rounded-md bg-accent text-void">
-        <SendHorizontal className="size-3.5" />
-      </button>
+    <div className="shrink-0 border-t border-line px-2.5 py-2">
+      <div className="flex items-center gap-2">
+        <button onClick={() => setNotice("Attachment picker staged")} className="grid size-7 place-items-center rounded-md text-text-muted hover:bg-hover hover:text-text">
+          <Paperclip className="size-3.5" />
+        </button>
+        <input
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault()
+              send()
+            }
+          }}
+          placeholder={placeholder}
+          className="min-w-0 flex-1 rounded-md border border-line bg-void px-2.5 py-1.5 text-xs text-text placeholder:text-text-faint focus:outline-none"
+        />
+        <button onClick={() => setNotice("Voice input armed")} className="grid size-7 place-items-center rounded-md text-text-muted hover:bg-hover hover:text-text">
+          <Mic className="size-3.5" />
+        </button>
+        <button onClick={send} className="grid size-7 place-items-center rounded-md bg-accent text-void">
+          <SendHorizontal className="size-3.5" />
+        </button>
+      </div>
+      <p className="mt-1 px-1 text-[10px] text-text-faint">{notice}</p>
     </div>
   )
 }
@@ -615,6 +782,7 @@ function AnalyticsModule() {
 }
 
 function SocialModule() {
+  const [connected, setConnected] = useState(false)
   return (
     <Pad>
       <div className="grid grid-cols-3 gap-1.5">
@@ -622,25 +790,39 @@ function SocialModule() {
           <div key={i} className="aspect-square rounded-md border border-line bg-void" />
         ))}
       </div>
-      <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-line py-1.5 text-xs text-text-muted transition-colors hover:bg-hover hover:text-text">
+      <button
+        onClick={() => setConnected((value) => !value)}
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-line py-1.5 text-xs text-text-muted transition-colors hover:bg-hover hover:text-text"
+      >
         <Upload className="size-3.5" />
-        Connect account
+        {connected ? "Account staged" : "Connect account"}
       </button>
     </Pad>
   )
 }
 
 function OutboundModule() {
+  const [message, setMessage] = useState("")
+  const [status, setStatus] = useState("Outbound composer ready")
   return (
     <div className="flex h-full flex-col gap-2 p-3">
       <textarea
+        value={message}
+        onChange={(event) => setMessage(event.target.value)}
         placeholder="Compose outbound message…"
         className="flex-1 resize-none rounded-md border border-line bg-void p-2.5 text-xs text-text placeholder:text-text-faint focus:outline-none"
       />
-      <button className="flex items-center justify-center gap-2 rounded-md bg-accent px-3 py-2 text-xs font-medium text-void">
+      <button
+        onClick={() => {
+          setStatus(message.trim() ? "Outbound message staged for approval" : "Write a message before staging")
+          if (message.trim()) setMessage("")
+        }}
+        className="flex items-center justify-center gap-2 rounded-md bg-accent px-3 py-2 text-xs font-medium text-void"
+      >
         <SendHorizontal className="size-3.5" />
         Send
       </button>
+      <p className="text-[11px] text-text-faint">{status}</p>
     </div>
   )
 }
@@ -661,6 +843,7 @@ function TerminalModule() {
 }
 
 function LogsModule() {
+  const [filter, setFilter] = useState("All")
   const lines = [
     { t: "06:56:54.384Z", tag: "SERVER", msg: "Installing dependencies…", tone: "text-text-faint" },
     { t: "06:56:55.146Z", tag: "BUILD", msg: "✓ Compiled successfully", tone: "text-live" },
@@ -669,11 +852,17 @@ function LogsModule() {
     { t: "06:57:03.550Z", tag: "WARN", msg: "rate limit near cap (IG)", tone: "text-warn" },
     { t: "06:57:04.771Z", tag: "AGENT", msg: "athena: 41 replies staged", tone: "text-text-muted" },
   ]
+  const visible = lines.filter((line) => filter === "All" || line.tag.toLowerCase() === filter.toLowerCase().replace(/s$/, ""))
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-void">
       <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-1.5 text-[11px]">
-        {["All", "Server", "Build", "Agent", "Hooks"].map((f, i) => (
-          <button key={f} className={cn("rounded px-1.5 py-0.5", i === 0 ? "bg-hover text-text" : "text-text-muted hover:bg-hover/60")}>
+        {["All", "Server", "Build", "Agent", "Hooks"].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={cn("rounded px-1.5 py-0.5", filter === f ? "bg-hover text-text" : "text-text-muted hover:bg-hover/60")}
+          >
             {f}
           </button>
         ))}
@@ -682,7 +871,7 @@ function LogsModule() {
         </span>
       </div>
       <div className="min-h-0 flex-1 space-y-0.5 overflow-auto p-3 font-mono text-[11px] leading-relaxed">
-        {lines.map((l, i) => (
+        {visible.map((l, i) => (
           <p key={i} className="flex gap-2">
             <span className="shrink-0 text-text-faint">{l.t}</span>
             <span className="shrink-0 rounded bg-hover px-1 text-[10px] text-text-muted">{l.tag}</span>
@@ -695,19 +884,22 @@ function LogsModule() {
 }
 
 function FilesModule() {
+  const [selected, setSelected] = useState("Select a file")
   return (
     <Pad>
       <div className="space-y-0.5 text-xs">
         {["app/", "components/", "lib/", "public/", "package.json", ".env.local"].map((f) => (
-          <div
+          <button
             key={f}
-            className="flex items-center gap-2 rounded-md px-2 py-1 text-text-muted transition-colors hover:bg-hover"
+            onClick={() => setSelected(f)}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-text-muted transition-colors hover:bg-hover"
           >
             <FolderOpen className="size-3.5 text-text-faint" />
             {f}
-          </div>
+          </button>
         ))}
       </div>
+      <ActionLine text={`Selected: ${selected}`} />
     </Pad>
   )
 }
@@ -755,6 +947,7 @@ function WebhooksModule() {
 
 function ConnectorsModule() {
   const [connectors, setConnectors] = useState<Array<{ capability: string; label: string; status: string }>>([])
+  const [selected, setSelected] = useState("Select a connector to inspect it")
 
   useEffect(() => {
     let active = true
@@ -771,6 +964,7 @@ function ConnectorsModule() {
         {(connectors.length ? connectors : [{ capability: "loading", label: "Checking vault", status: "loading" }]).map((connector) => (
           <button
             key={connector.capability}
+            onClick={() => setSelected(`${connector.label}: ${connector.status}`)}
             className="flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-2 text-xs text-text-muted transition-colors hover:border-line-strong hover:bg-hover hover:text-text"
           >
             <Waypoints className="size-4 shrink-0 text-text-faint" />
@@ -779,25 +973,38 @@ function ConnectorsModule() {
           </button>
         ))}
       </div>
+      <ActionLine text={selected} />
     </Pad>
   )
 }
 
 function ImageModule() {
+  const [prompt, setPrompt] = useState("")
+  const [output, setOutput] = useState("Generated output")
   return (
     <div className="flex h-full flex-col gap-2 p-3">
       <div className="grid flex-1 place-items-center rounded-lg border border-dashed border-line bg-void">
         <div className="text-center">
           <ImagePlus className="mx-auto size-6 text-text-faint" />
-          <p className="mt-1 text-xs text-text-faint">Generated output</p>
+          <p className="mt-1 text-xs text-text-faint">{output}</p>
         </div>
       </div>
       <div className="flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-1.5">
         <input
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
           placeholder="Describe an image…"
           className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none"
         />
-        <button className="rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">Gen</button>
+        <button
+          onClick={() => {
+            setOutput(prompt.trim() ? `Prompt staged: ${prompt.trim()}` : "Describe an image first")
+            if (prompt.trim()) setPrompt("")
+          }}
+          className="rounded bg-accent px-2 py-1 text-[11px] font-medium text-void"
+        >
+          Gen
+        </button>
       </div>
     </div>
   )
@@ -841,6 +1048,7 @@ const BRIEF_SECTIONS = [
 
 function BriefModule() {
   const [open, setOpen] = useState<string[]>(["target"])
+  const [notice, setNotice] = useState("Brief builder ready")
   const toggle = (id: string) =>
     setOpen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
@@ -851,10 +1059,19 @@ function BriefModule() {
         <ScanSearch className="size-3.5 text-accent" />
         <span className="text-xs font-medium text-text">Lead Gen Research Brief</span>
         <div className="ml-auto flex items-center gap-1.5">
-          <button className="flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] text-text-muted hover:bg-hover hover:text-text">
+          <button
+            onClick={() => {
+              setOpen(BRIEF_SECTIONS.map((section) => section.id))
+              setNotice("AI auto-fill staged all brief sections")
+            }}
+            className="flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] text-text-muted hover:bg-hover hover:text-text"
+          >
             <Sparkles className="size-3" /> Auto-fill AI
           </button>
-          <button className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">
+          <button
+            onClick={() => setNotice("Scrape run queued locally; connector execution is gated by configured credentials")}
+            className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void"
+          >
             <Globe2 className="size-3" /> Run Scrape
           </button>
         </div>
@@ -914,6 +1131,7 @@ function BriefModule() {
 
         {/* saved briefs */}
         <div className="p-3">
+          <ActionLine text={notice} />
           <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-text-faint">Saved Briefs</p>
           <div className="space-y-1">
             {["SaaS CFOs — Series A", "E-com brands $1M–10M", "Agencies scaling headcount"].map((b) => (
@@ -970,6 +1188,7 @@ const TYPE_COLORS: Record<string, string> = {
 function AssetVaultModule() {
   const [filter, setFilter] = useState<AssetType>("All")
   const [search, setSearch] = useState("")
+  const [notice, setNotice] = useState("Asset vault ready")
 
   const visible = VAULT_ITEMS.filter((item) => {
     const matchType = filter === "All" || item.type === filter
@@ -988,10 +1207,16 @@ function AssetVaultModule() {
         <span className="text-xs font-medium text-text">Asset Vault</span>
         <span className="text-[11px] text-text-faint">{VAULT_ITEMS.length} assets</span>
         <div className="ml-auto flex items-center gap-1">
-          <button className="flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] text-text-muted hover:bg-hover hover:text-text">
+          <button
+            onClick={() => setNotice("New folder staged")}
+            className="flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] text-text-muted hover:bg-hover hover:text-text"
+          >
             <FolderPlus className="size-3" /> New folder
           </button>
-          <button className="flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] text-text-muted hover:bg-hover hover:text-text">
+          <button
+            onClick={() => setNotice("Import picker staged")}
+            className="flex items-center gap-1 rounded border border-line px-2 py-1 text-[11px] text-text-muted hover:bg-hover hover:text-text"
+          >
             <Link2 className="size-3" /> Import
           </button>
         </div>
@@ -1059,13 +1284,17 @@ function AssetVaultModule() {
               <span className="flex shrink-0 items-center gap-1 text-[10px] text-text-faint">
                 <Clock className="size-3" /> {item.ago}
               </span>
-              <button className="invisible size-6 place-items-center rounded text-text-faint hover:text-text group-hover:grid">
+              <button
+                onClick={() => setNotice(`Opened ${item.name}`)}
+                className="invisible size-6 place-items-center rounded text-text-faint hover:text-text group-hover:grid"
+              >
                 <ExternalLink className="size-3.5" />
               </button>
             </div>
           ))
         )}
       </div>
+      <div className="shrink-0 border-t border-line px-3 py-1.5 text-[11px] text-text-faint">{notice}</div>
     </div>
   )
 }
@@ -1073,6 +1302,7 @@ function AssetVaultModule() {
 /* ----------------------- Sheets / Docs wrappers ---------------------------- */
 
 function SheetsModule() {
+  const [notice, setNotice] = useState("Sheets ready")
   const sheets = [
     { name: "Lead list — SaaS CFOs", rows: 412, updated: "2h" },
     { name: "Competitor teardown", rows: 88, updated: "1d" },
@@ -1085,7 +1315,10 @@ function SheetsModule() {
         <BrandIcon slug="google-sheets" size={14} />
         <span className="text-xs font-medium text-text">Sheets</span>
         <div className="ml-auto flex items-center gap-1">
-          <button className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">
+          <button
+            onClick={() => setNotice("New sheet staged")}
+            className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void"
+          >
             <Plus className="size-3" /> New sheet
           </button>
         </div>
@@ -1104,17 +1337,19 @@ function SheetsModule() {
             <span className="flex items-center gap-1 text-[10px] text-text-faint">
               <Clock className="size-3" /> {s.updated}
             </span>
-            <button className="grid size-6 place-items-center rounded text-text-faint hover:text-text">
+            <button onClick={() => setNotice(`Opened ${s.name}`)} className="grid size-6 place-items-center rounded text-text-faint hover:text-text">
               <ExternalLink className="size-3.5" />
             </button>
           </div>
         ))}
       </div>
+      <div className="shrink-0 border-t border-line px-3 py-1.5 text-[11px] text-text-faint">{notice}</div>
     </div>
   )
 }
 
 function DocsModule() {
+  const [notice, setNotice] = useState("Docs ready")
   const docsItems = [
     { name: "Q3 GTM Deck", type: "Doc", updated: "2h" },
     { name: "Outreach script v2", type: "Doc", updated: "5h" },
@@ -1127,7 +1362,10 @@ function DocsModule() {
         <BrandIcon slug="google-docs" size={14} />
         <span className="text-xs font-medium text-text">Docs</span>
         <div className="ml-auto flex items-center gap-1">
-          <button className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">
+          <button
+            onClick={() => setNotice("New doc staged")}
+            className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void"
+          >
             <Plus className="size-3" /> New doc
           </button>
         </div>
@@ -1146,12 +1384,13 @@ function DocsModule() {
             <span className="flex items-center gap-1 text-[10px] text-text-faint">
               <Clock className="size-3" /> {d.updated}
             </span>
-            <button className="grid size-6 place-items-center rounded text-text-faint hover:text-text">
+            <button onClick={() => setNotice(`Opened ${d.name}`)} className="grid size-6 place-items-center rounded text-text-faint hover:text-text">
               <ExternalLink className="size-3.5" />
             </button>
           </div>
         ))}
       </div>
+      <div className="shrink-0 border-t border-line px-3 py-1.5 text-[11px] text-text-faint">{notice}</div>
     </div>
   )
 }
@@ -1159,16 +1398,36 @@ function DocsModule() {
 /* ---------------------- Live Research Results ------------------------------ */
 
 function ResearchModule() {
+  const [query, setQuery] = useState("")
+  const [results, setResults] = useState<string[]>([])
+  const runSearch = () => {
+    const value = query.trim()
+    if (!value) return
+    setResults([
+      `Queued agent research for "${value}"`,
+      "Sources: web, CRM notes, asset vault",
+      "Next: dispatch through Matrix ENV once connector health is green",
+    ])
+  }
+
   return (
     <Pad>
       <div className="flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-1.5">
         <Search className="size-3.5 text-text-faint" />
         <input
-          placeholder="Research query…"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") runSearch()
+          }}
+          placeholder="Research query..."
           className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none"
         />
+        <button onClick={runSearch} className="rounded bg-accent px-2 py-1 text-[11px] font-medium text-void">Run</button>
       </div>
-      <p className="mt-2 text-xs text-text-faint">Agent research results render here.</p>
+      <div className="mt-2 space-y-1 text-xs text-text-faint">
+        {results.length ? results.map((result) => <p key={result} className="rounded border border-line bg-void px-2 py-1">{result}</p>) : <p>Agent research results render here.</p>}
+      </div>
     </Pad>
   )
 }

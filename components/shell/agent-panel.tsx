@@ -67,6 +67,10 @@ export function AgentPanel() {
   const [sending, setSending] = useState(false)
   const [skills, setSkills] = useState<Ay0SkillOption[]>([])
   const [selectedSkill, setSelectedSkill] = useState("ay0-core")
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [rosterOpen, setRosterOpen] = useState(false)
+  const [voiceArmed, setVoiceArmed] = useState(false)
+  const [panelNotice, setPanelNotice] = useState("Ready")
 
   useEffect(() => {
     let active = true
@@ -96,17 +100,31 @@ export function AgentPanel() {
       { id: crypto.randomUUID(), who: "You", self: true, text: prompt },
     ])
 
-    const result = await runAgent({ runtime, prompt, model, effort, mode, skills: selectedSkill ? [selectedSkill] : [] })
-    setMatrixMessages((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        who: "AY.0",
-        role: runtime === "codex" ? "via Codex" : "via Claude Code",
-        text: result.output,
-      },
-    ])
-    setSending(false)
+    try {
+      const result = await runAgent({ runtime, prompt, model, effort, mode, skills: selectedSkill ? [selectedSkill] : [] })
+      setMatrixMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          who: "AY.0",
+          role: runtime === "codex" ? "via Codex" : "via Claude Code",
+          text: result.output,
+        },
+      ])
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Local runtime failed."
+      setMatrixMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          who: "AY.0",
+          role: "Runtime guard",
+          text: message,
+        },
+      ])
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -122,18 +140,29 @@ export function AgentPanel() {
             Matrix ENV
           </ChatTabButton>
           <button
+            onClick={() => setSettingsOpen((value) => !value)}
             title="Configure agents"
             className="ml-auto grid size-7 shrink-0 place-items-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text"
           >
             <SlidersHorizontal className="size-4" />
           </button>
           <button
+            onClick={() => {
+              setDraft("")
+              setMatrixMessages([MATRIX_WELCOME])
+              setPanelNotice("New Matrix session ready")
+            }}
             title="New session"
             className="grid size-7 shrink-0 place-items-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text"
           >
             <Plus className="size-4" />
           </button>
         </div>
+        {settingsOpen ? (
+          <div className="mt-2 rounded-md border border-line bg-void p-2 text-[11px] text-text-muted">
+            Runtime: {runtime === "codex" ? "ChatGPT/Codex" : "Claude Code"} · mode: {mode} · effort: {effort}
+          </div>
+        ) : null}
 
         <button className="mt-1.5 flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-text transition-colors hover:bg-hover">
           {chatTab === "matrix" ? <Bot className="size-3.5 shrink-0 text-accent" /> : <Radio className="size-3.5 shrink-0 text-accent" />}
@@ -201,8 +230,18 @@ export function AgentPanel() {
       <div className="shrink-0 border-b border-line px-3 py-2.5">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-text-faint">Roster · 5</p>
-          <button className="text-[10px] text-text-muted transition-colors hover:text-text">Manage</button>
+          <button
+            onClick={() => setRosterOpen((value) => !value)}
+            className="text-[10px] text-text-muted transition-colors hover:text-text"
+          >
+            Manage
+          </button>
         </div>
+        {rosterOpen ? (
+          <div className="mb-2 rounded-md border border-line bg-void px-2 py-1.5 text-[11px] text-text-muted">
+            Roster management is local in this build. Select Matrix ENV to dispatch real local runtime work.
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-1.5">
           {ROSTER.map((agent) => (
             <div
@@ -251,8 +290,15 @@ export function AgentPanel() {
             className="max-h-40 min-h-9 w-full resize-none bg-transparent px-1.5 py-1 text-sm text-text placeholder:text-text-faint focus:outline-none"
           />
           <div className="mt-1 flex items-center gap-1">
-            <IconBtn title="Attach"><Paperclip className="size-4" /></IconBtn>
-            <IconBtn title={chatTab === "matrix" ? "Voice prompt (AY.0)" : "Voice prompt (Elliana)"}><Mic className="size-4" /></IconBtn>
+            <IconBtn title="Attach" onClick={() => setPanelNotice("Attachment picker staged for local file bridge")}>
+              <Paperclip className="size-4" />
+            </IconBtn>
+            <IconBtn
+              title={chatTab === "matrix" ? "Voice prompt (AY.0)" : "Voice prompt (Elliana)"}
+              onClick={() => setVoiceArmed((value) => !value)}
+            >
+              <Mic className="size-4" />
+            </IconBtn>
             <button
               onClick={() => setHumeLive((value) => !value)}
               title="Hume live voice"
@@ -280,6 +326,7 @@ export function AgentPanel() {
             {chatTab === "matrix" ? "AY.0 is listening — speak naturally." : "Elliana is live — speak naturally, she's coordinating the team."}
           </div>
         ) : null}
+        <p className="mt-1 px-1 text-[10px] text-text-faint">{voiceArmed ? "Voice prompt armed" : panelNotice}</p>
       </div>
     </div>
   )
@@ -314,8 +361,8 @@ function ProviderButton({ active, ready, onClick, children }: { active: boolean;
   )
 }
 
-function IconBtn({ children, title }: { children: React.ReactNode; title: string }) {
-  return <button title={title} className="grid size-8 place-items-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text">{children}</button>
+function IconBtn({ children, title, onClick }: { children: React.ReactNode; title: string; onClick?: () => void }) {
+  return <button onClick={onClick} title={title} className="grid size-8 place-items-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text">{children}</button>
 }
 
 function SystemLine({ text, loading = false }: { text: string; loading?: boolean }) {

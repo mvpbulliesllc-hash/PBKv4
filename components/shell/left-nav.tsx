@@ -27,6 +27,9 @@ export function LeftNav({
   const [tenant, setTenant] = useState(TENANTS[0])
   const [tenantOpen, setTenantOpen] = useState(false)
   const [hubOpen, setHubOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [workspaceDraft, setWorkspaceDraft] = useState("")
+  const [chatCount, setChatCount] = useState(1)
 
   const hub = HUBS.find((h) => h.id === hubId) ?? HUBS[0]
   const HubIcon = hub.icon
@@ -79,24 +82,54 @@ export function LeftNav({
               </button>
             ))}
             <div className="my-1 h-px bg-line" />
-            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-muted transition-colors hover:bg-hover hover:text-text">
+            <button
+              onClick={() => {
+                const label = workspaceDraft.trim()
+                if (label) setTenant(label)
+                setWorkspaceDraft("")
+                setTenantOpen(false)
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-muted transition-colors hover:bg-hover hover:text-text"
+            >
               <Plus className="size-3.5" />
               New workspace
             </button>
+            <input
+              value={workspaceDraft}
+              onChange={(event) => setWorkspaceDraft(event.target.value)}
+              placeholder="Workspace name"
+              className="mt-1 w-full rounded-md border border-line bg-void px-2 py-1 text-xs text-text placeholder:text-text-faint focus:outline-none"
+            />
           </div>
         ) : null}
       </div>
 
       {/* New chat + search */}
       <div className="shrink-0 space-y-1.5 px-2 pb-2">
-        <button className="gloss-elevated flex w-full items-center gap-2 rounded-md border border-line px-2.5 py-2 text-sm font-medium text-text transition-colors hover:border-line-strong">
+        <button
+          onClick={() => {
+            setChatCount((count) => count + 1)
+            onSelect(`chat-${chatCount + 1}`)
+          }}
+          className="gloss-elevated flex w-full items-center gap-2 rounded-md border border-line px-2.5 py-2 text-sm font-medium text-text transition-colors hover:border-line-strong"
+        >
           <Plus className="size-4" />
           New Chat
         </button>
-        <button className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-muted transition-colors hover:bg-hover hover:text-text">
+        <button
+          onClick={() => setSearchOpen((value) => !value)}
+          className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-muted transition-colors hover:bg-hover hover:text-text"
+        >
           <Search className="size-4" />
           Search
         </button>
+        {searchOpen ? (
+          <input
+            autoFocus
+            placeholder="Search workspace..."
+            className="w-full rounded-md border border-line bg-void px-2.5 py-1.5 text-xs text-text placeholder:text-text-faint focus:outline-none"
+          />
+        ) : null}
       </div>
 
       {/* HUB switcher — fixed tabs, directly below search */}
@@ -200,7 +233,7 @@ export function LeftNav({
                 return (
                   <li key={item.id}>
                     <button
-                      onClick={() => onSelect(item.id)}
+                      onClick={() => handleRailClick(item)}
                       className={cn(
                         "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                         isActive ? "bg-hover text-text" : "text-text-muted hover:bg-hover/60 hover:text-text",
@@ -229,7 +262,7 @@ export function LeftNav({
           return (
             <button
               key={item.id}
-              onClick={() => onSelect(item.id)}
+              onClick={() => handleRailClick(item)}
               className={cn(
                 "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                 active === item.id ? "bg-hover text-text" : "text-text-muted hover:bg-hover hover:text-text",

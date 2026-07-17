@@ -190,22 +190,22 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Platform",
     items: [
       { id: "home", label: "Home", icon: Home },
-      { id: "projects", label: "Projects", icon: FolderGit2 },
-      { id: "chats", label: "Chats", icon: MessagesSquare },
-      { id: "agents", label: "Agents", icon: Bot },
-      { id: "design", label: "Design System", icon: Palette },
+      { id: "projects", label: "Projects", icon: FolderGit2, module: "files" },
+      { id: "chats", label: "Chats", icon: MessagesSquare, module: "messages" },
+      { id: "agents", label: "Agents", icon: Bot, module: "connectors" },
+      { id: "design", label: "Design System", icon: Palette, module: "config" },
     ],
   },
   {
     id: "platform",
     title: "System",
     items: [
-      { id: "integrations", label: "Integrations", icon: Plug },
-      { id: "connectors", label: "Connectors", icon: Cable },
-      { id: "api", label: "API & Webhooks", icon: Webhook },
-      { id: "skills", label: "Skills Hub", icon: Boxes },
+      { id: "integrations", label: "Integrations", icon: Plug, module: "connectors" },
+      { id: "connectors", label: "Connectors", icon: Cable, module: "connectors" },
+      { id: "api", label: "API & Webhooks", icon: Webhook, module: "webhooks" },
+      { id: "skills", label: "Skills Hub", icon: Boxes, module: "env" },
     ],
   },
 ]
 
-export const NAV_FOOTER: NavItem[] = [{ id: "settings", label: "Settings", icon: Settings }]
+export const NAV_FOOTER: NavItem[] = [{ id: "settings", label: "Settings", icon: Settings, module: "config" }]
