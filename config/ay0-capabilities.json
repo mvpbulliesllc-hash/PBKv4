@@ -15,6 +15,6 @@
     "openclaw.trainer": { "label": "OpenClaw trainer", "env": ["OPENCLAW_AGENT_TRAINER_API_KEY"], "seats": ["Ay.0"], "status": "live" },
     "infra.vercel": { "label": "Vercel", "env": [], "seats": [], "status": "manual" },
     "infra.github": { "label": "GitHub", "env": ["GITHUB_PAT"], "seats": [], "status": "quarantined" },
-    "comms.slack": { "label": "Slack", "env": ["SLACK_APP_TOKEN"], "seats": [], "status": "quarantined" }
+    "comms.slack": { "label": "Slack via Vercel Connect", "env": [], "seats": ["Ay.0"], "status": "live", "probe": "slack-connect" }
   }
 }

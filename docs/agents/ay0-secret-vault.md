@@ -15,6 +15,6 @@ The client capability map is [`config/ay0-capabilities.json`](../../config/ay0-c
 Quarantined or manual paths remain unavailable to AY.0:
 
 - GitHub requires a rotated, fine-grained repository PAT before it can be enabled.
-- Slack requires a rotated and scoped app credential before it can be enabled.
+- Slack uses Vercel Connect. PBKv4 stores only the connector UID and requests short-lived, scoped runtime tokens; it does not store a Slack bot token or signing secret.
 - Vercel deployment and production environment configuration remain operator-manual.
 - Hume is resolved only for the `runner` seat; AY.0 receives health status, not its credential values.

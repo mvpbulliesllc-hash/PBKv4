@@ -1,6 +1,7 @@
 import "server-only"
 
 import { getCapabilityProbe, getCapabilitySecrets, inspectCapability, type Ay0Seat } from "./secret-vault"
+import { inspectSlackConnection } from "@/lib/slack/connect"
 
 export type ConnectorHealth = {
   capability: string
@@ -21,6 +22,7 @@ const PROBES: Array<{ capability: string; seat: Ay0Seat }> = [
   { capability: "agent.composio", seat: "Ay.0" },
   { capability: "voice.hume", seat: "runner" },
   { capability: "creative-tim.registry", seat: "Ay.0" },
+  { capability: "comms.slack", seat: "Ay.0" },
 ]
 
 async function request(url: string, headers: HeadersInit) {
@@ -56,6 +58,9 @@ async function executeProbe(probe: string, secrets: Record<string, string>) {
       return { remainingCredits: "unknown" as const }
     case "creative-tim":
       await request("https://www.creative-tim.com/ui/r/ai-assistant-panel.json", { Authorization: `Bearer ${secrets.CREATIVE_TIM_API_KEY}` })
+      return { remainingCredits: "unknown" as const }
+    case "slack-connect":
+      await inspectSlackConnection()
       return { remainingCredits: "unknown" as const }
     default:
       return null
