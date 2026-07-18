@@ -1,11 +1,20 @@
-import { sql } from "drizzle-orm"
+import { neon } from "@neondatabase/serverless"
 import { NextResponse } from "next/server"
-import { getDatabase } from "@/lib/db/client"
+import { getDatabaseUrl } from "@/lib/db/client"
 import { ensureDefaultPipeline, resolveTenant } from "@/lib/db/crm"
 import { isOperatorRequest } from "@/lib/operator-auth"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
+
+/**
+ * Run a single DDL statement via Neon serverless. Returns true on success,
+ * false if the statement fails with duplicate_object / duplicate_table (which
+ * means it already exists — idempotent).
+ */
+async function runDDL(sqlStr: neon.NeonQueryFunction<false, false>, stmt: string): Promise<void> {
+  await sqlStr(stmt)
+}
 
 /**
  * POST /api/crm/setup
@@ -19,23 +28,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const db = getDatabase()
+    const sqlStr = neon(getDatabaseUrl())
 
-    // ── 1. Enums ─────────────────────────────────────────────────────────────
-    await db.execute(sql`
-      do $$ begin
-        create type contact_status as enum ('lead','qualified','customer','inactive');
-      exception when duplicate_object then null; end $$;
-      do $$ begin
-        create type deal_status as enum ('open','won','lost');
-      exception when duplicate_object then null; end $$;
-      do $$ begin
-        create type task_status as enum ('open','in_progress','done','cancelled');
-      exception when duplicate_object then null; end $$;
-      do $$ begin
-        create type task_priority as enum ('low','normal','high','urgent');
-      exception when duplicate_object then null; end $$;
-    `)
+    // ── 1. Enums — each in its own call so duplicate errors don't abort ──────
+    for (const [name, values] of [
+      ["contact_status", "'lead','qualified','customer','inactive'"],
+      ["deal_status",    "'open','won','lost'"],
+      ["task_status",    "'open','in_progress','done','cancelled'"],
+      ["task_priority",  "'low','normal','high','urgent'"],
+    ] as [string, string][]) {
+      await sqlStr(
+        `do $$ begin create type ${name} as enum (${values}); exception when duplicate_object then null; end $$`
+      )
+    }
 
     // ── 2. Tenants ────────────────────────────────────────────────────────────
     await db.execute(sql`
