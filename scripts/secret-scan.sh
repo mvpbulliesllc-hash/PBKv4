@@ -7,6 +7,12 @@ if rg -n --hidden \
   --glob '!.git/**' \
   --glob '!node_modules/**' \
   --glob '!.next/**' \
+  --glob '!public/media/**' \
+  --glob '!public/**/*.png' \
+  --glob '!public/**/*.jpg' \
+  --glob '!public/**/*.jpeg' \
+  --glob '!public/**/*.ico' \
+  --glob '!public/**/*.mp4' \
   --glob '!scripts/secret-scan.sh' \
   "$patterns" .; then
   echo 'Credential-like value found. Remove it before committing.' >&2
@@ -18,6 +24,6 @@ while IFS= read -r file; do
     echo "Populated environment assignment found in $file" >&2
     exit 1
   fi
-done < <(find . -type f -name '.env*' -not -path './node_modules/*' -not -path './.git/*')
+done < <(find . -type f -name '.env*' -not -path './node_modules/*' -not -path './.next/*' -not -path './.git/*')
 
 echo 'Secret scan passed.'

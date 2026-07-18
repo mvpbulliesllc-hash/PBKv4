@@ -14,6 +14,34 @@ export function TopBar({
   const [commandOpen, setCommandOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [deployStatus, setDeployStatus] = useState("Ready")
+  const [notices, setNotices] = useState([
+    "CRM health check needs production env confirmation.",
+    "Slack connector installed in Vercel Connect.",
+    "Local Matrix ENV bridge is loopback-only.",
+  ])
+
+  const runCommand = async (command: string) => {
+    setCommandOpen(false)
+    if (command === "Open Matrix ENV") {
+      setNotices(["Matrix ENV lives in the left agent panel. Production dispatch requires the signed local bridge."])
+      setNotificationsOpen(true)
+      return
+    }
+
+    const endpoint = command === "Check CRM health" ? "/api/crm/health" : "/api/ay0/readiness"
+    setDeployStatus("Checking")
+    try {
+      const response = await fetch(endpoint, { cache: "no-store" })
+      const payload = await response.json().catch(() => ({})) as Record<string, unknown>
+      const status = typeof payload.status === "string" ? payload.status : response.ok ? "ready" : "needs attention"
+      setNotices([`${command}: ${status}`, `HTTP ${response.status}`, `Checked ${new Date().toLocaleTimeString()}`])
+      setDeployStatus(response.ok ? "Checked" : "Review")
+    } catch {
+      setNotices([`${command}: failed to reach ${endpoint}`, "Check deployment logs or local dev server."])
+      setDeployStatus("Review")
+    }
+    setNotificationsOpen(true)
+  }
 
   return (
     <header className="gloss flex h-11 shrink-0 items-center gap-3 border-b border-line px-3">
@@ -49,7 +77,7 @@ export function TopBar({
           />
           <div className="mt-2 space-y-1 text-xs text-text-muted">
             {["Open Matrix ENV", "Check CRM health", "Open connector status"].map((item) => (
-              <button key={item} onClick={() => setCommandOpen(false)} className="block w-full rounded px-2 py-1 text-left hover:bg-hover hover:text-text">
+              <button key={item} onClick={() => void runCommand(item)} className="block w-full rounded px-2 py-1 text-left hover:bg-hover hover:text-text">
                 {item}
               </button>
             ))}
@@ -73,7 +101,7 @@ export function TopBar({
         </button>
         {notificationsOpen ? (
           <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-line-strong bg-elevated p-2 text-xs shadow-2xl shadow-black/60">
-            {["CRM health check needs production env confirmation.", "Slack connector installed in Vercel Connect.", "Local Matrix ENV bridge is loopback-only."].map((item) => (
+            {notices.map((item) => (
               <p key={item} className="border-b border-line px-2 py-1.5 text-text-muted last:border-b-0">{item}</p>
             ))}
           </div>
@@ -91,8 +119,7 @@ export function TopBar({
         </button>
         <button
           onClick={() => {
-            setDeployStatus("Queued")
-            window.setTimeout(() => setDeployStatus("Checked"), 900)
+            void runCommand("Open connector status")
           }}
           className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-void"
           title={`Deploy status: ${deployStatus}`}
