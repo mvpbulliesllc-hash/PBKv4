@@ -1,13 +1,22 @@
 import { sql } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { checkConnectorHealth } from "@/lib/ay0/connector-health"
-import { getDatabase } from "@/lib/db/client"
+import { getDatabase, getDatabaseUrl } from "@/lib/db/client"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 export const maxDuration = 30
 
 async function checkDatabase() {
+  try {
+    getDatabaseUrl()
+  } catch {
+    return {
+      status: "missing-env",
+      required: ["DATABASE_URL or pbk4_POSTGRES_URL or POSTGRES_URL or POSTGRES_PRISMA_URL or pbk4_POSTGRES_PRISMA_URL"],
+    }
+  }
+
   try {
     const db = getDatabase()
     const result = await db.execute<{ contacts: string | null }>(sql`select to_regclass('public.crm_contacts') as contacts`)
@@ -17,18 +26,18 @@ async function checkDatabase() {
     }
   } catch {
     return {
-      status: "unavailable",
-      required: ["DATABASE_URL"],
+      status: "connection-failed",
+      required: ["Valid Neon/Postgres connection string with network access from Vercel"],
     }
   }
 }
 
 function checkBlob() {
-  const hasToken = Boolean(process.env.pbk4_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN)
-  const hasStore = Boolean(process.env.pbk4_STORE_ID || process.env.BLOB_STORE_ID)
+  const hasToken = Boolean(process.env.pbk4_READ_WRITE_TOKEN || process.env.PBK4_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN)
+  const hasStore = Boolean(process.env.pbk4_STORE_ID || process.env.PBK4_STORE_ID || process.env.BLOB_STORE_ID)
   return {
     status: hasToken && hasStore ? "configured" : "missing-env",
-    required: ["pbk4_READ_WRITE_TOKEN or BLOB_READ_WRITE_TOKEN", "pbk4_STORE_ID or BLOB_STORE_ID"],
+    required: ["pbk4_READ_WRITE_TOKEN or PBK4_READ_WRITE_TOKEN or BLOB_READ_WRITE_TOKEN", "pbk4_STORE_ID or PBK4_STORE_ID or BLOB_STORE_ID"],
   }
 }
 
