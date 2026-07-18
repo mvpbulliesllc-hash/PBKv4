@@ -28,7 +28,7 @@ function checkBlob() {
   const hasStore = Boolean(process.env.pbk4_STORE_ID || process.env.BLOB_STORE_ID)
   return {
     status: hasToken && hasStore ? "configured" : "missing-env",
-    required: ["pbk4_READ_WRITE_TOKEN", "pbk4_STORE_ID"],
+    required: ["pbk4_READ_WRITE_TOKEN or BLOB_READ_WRITE_TOKEN", "pbk4_STORE_ID or BLOB_STORE_ID"],
   }
 }
 

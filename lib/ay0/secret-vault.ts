@@ -6,9 +6,11 @@ import capabilityMap from "@/config/ay0-capabilities.json"
 export type Ay0Seat = "Ay.0" | "runner"
 export type CapabilityState = "env-ready" | "missing-env" | "denied" | "manual" | "quarantined" | "not-wired"
 
+type EnvRequirement = string | string[]
+
 type CapabilityEntry = {
   label: string
-  env: string[]
+  env: EnvRequirement[]
   seats: string[]
   status: string
   probe?: string
@@ -58,6 +60,26 @@ function resolveValue(name: string, vault: Map<string, string>) {
   return process.env[name] || vault.get(name) || ""
 }
 
+function envNames(requirement: EnvRequirement) {
+  return Array.isArray(requirement) ? requirement : [requirement]
+}
+
+function canonicalEnvName(requirement: EnvRequirement) {
+  return envNames(requirement)[0]
+}
+
+function resolveRequirement(requirement: EnvRequirement, vault: Map<string, string>) {
+  for (const name of envNames(requirement)) {
+    const value = resolveValue(name, vault)
+    if (value) return value
+  }
+  return ""
+}
+
+function describeRequirement(requirement: EnvRequirement) {
+  return envNames(requirement).join(" or ")
+}
+
 export function inspectCapability(capability: string, seat: Ay0Seat) {
   const entry = entries[capability]
   if (!entry) return { capability, label: capability, state: "not-wired" as const, missingEnv: [] as string[] }
@@ -66,7 +88,9 @@ export function inspectCapability(capability: string, seat: Ay0Seat) {
   if (entry.status !== "live") return { capability, label: entry.label, state: "not-wired" as const, missingEnv: [] as string[] }
   if (!entry.seats.includes(seat)) return { capability, label: entry.label, state: "denied" as const, missingEnv: [] as string[] }
   const vault = vaultValues()
-  const missingEnv = entry.env.filter((name) => !resolveValue(name, vault))
+  const missingEnv = entry.env
+    .filter((requirement) => !resolveRequirement(requirement, vault))
+    .map(describeRequirement)
   return {
     capability,
     label: entry.label,
@@ -84,7 +108,7 @@ export function getCapabilitySecrets(capability: string, seat: Ay0Seat) {
   if (inspection.state !== "env-ready") throw new Error(`Capability ${capability} is ${inspection.state}.`)
   const entry = entries[capability]
   const vault = vaultValues()
-  return Object.fromEntries(entry.env.map((name) => [name, resolveValue(name, vault)]))
+  return Object.fromEntries(entry.env.map((requirement) => [canonicalEnvName(requirement), resolveRequirement(requirement, vault)]))
 }
 
 export function getCapabilityProbe(capability: string) {
