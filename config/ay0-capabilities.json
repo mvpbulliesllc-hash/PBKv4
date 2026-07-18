@@ -22,7 +22,7 @@
     "openclaw.trainer": { "label": "OpenClaw trainer", "env": ["OPENCLAW_AGENT_TRAINER_API_KEY"], "seats": ["Ay.0"], "status": "live" },
     "infra.vercel": { "label": "Vercel", "env": ["VERCEL_TOKEN"], "seats": ["Ay.0"], "status": "live", "probe": "vercel" },
     "infra.github": { "label": "GitHub", "env": [["GITHUB_TOKEN", "GITHUB_PAT"]], "seats": ["Ay.0"], "status": "live", "probe": "github" },
-    "storage.blob": { "label": "Vercel Blob", "env": [["pbk4_READ_WRITE_TOKEN", "PBK4_READ_WRITE_TOKEN", "BLOB_READ_WRITE_TOKEN"], ["pbk4_STORE_ID", "PBK4_STORE_ID", "BLOB_STORE_ID"]], "seats": ["Ay.0"], "status": "live" },
+    "storage.blob": { "label": "Vercel Blob", "env": [["pbk4_READ_WRITE_TOKEN", "PBK4_READ_WRITE_TOKEN", "pk4_READ_WRITE_TOKEN", "PK4_READ_WRITE_TOKEN", "BLOB_READ_WRITE_TOKEN"], ["pbk4_STORE_ID", "PBK4_STORE_ID", "pk4_STORE_ID", "PK4_STORE_ID", "BLOB_STORE_ID"]], "seats": ["Ay.0"], "status": "live" },
     "database.neon": { "label": "Neon Postgres", "env": [["DATABASE_URL", "pbk4_POSTGRES_URL", "POSTGRES_URL", "POSTGRES_PRISMA_URL", "pbk4_POSTGRES_PRISMA_URL"]], "seats": ["Ay.0"], "status": "live" },
     "comms.slack": { "label": "Slack via Vercel Connect", "env": [], "seats": ["Ay.0"], "status": "live", "probe": "slack-connect" },
     "local.codex": { "label": "Codex local runtime", "env": ["CODEX_CLI_PATH"], "seats": ["runner"], "status": "manual" },

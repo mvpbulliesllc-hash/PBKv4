@@ -33,11 +33,11 @@ async function checkDatabase() {
 }
 
 function checkBlob() {
-  const hasToken = Boolean(process.env.pbk4_READ_WRITE_TOKEN || process.env.PBK4_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN)
-  const hasStore = Boolean(process.env.pbk4_STORE_ID || process.env.PBK4_STORE_ID || process.env.BLOB_STORE_ID)
+  const hasToken = Boolean(process.env.pbk4_READ_WRITE_TOKEN || process.env.PBK4_READ_WRITE_TOKEN || process.env.pk4_READ_WRITE_TOKEN || process.env.PK4_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN)
+  const hasStore = Boolean(process.env.pbk4_STORE_ID || process.env.PBK4_STORE_ID || process.env.pk4_STORE_ID || process.env.PK4_STORE_ID || process.env.BLOB_STORE_ID)
   return {
     status: hasToken && hasStore ? "configured" : "missing-env",
-    required: ["pbk4_READ_WRITE_TOKEN or PBK4_READ_WRITE_TOKEN or BLOB_READ_WRITE_TOKEN", "pbk4_STORE_ID or PBK4_STORE_ID or BLOB_STORE_ID"],
+    required: ["pbk4_READ_WRITE_TOKEN or PBK4_READ_WRITE_TOKEN or pk4_READ_WRITE_TOKEN or PK4_READ_WRITE_TOKEN or BLOB_READ_WRITE_TOKEN", "pbk4_STORE_ID or PBK4_STORE_ID or pk4_STORE_ID or PK4_STORE_ID or BLOB_STORE_ID"],
   }
 }
 
