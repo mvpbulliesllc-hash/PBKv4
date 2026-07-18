@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }).returning()
     return NextResponse.json({ attachment }, { status: 201 })
   } catch (error) {
-    if (blob) await del(blob.url, { token: process.env.pbk4_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN }).catch(() => undefined)
+    if (blob) await del(blob.url, { token: process.env.pk4_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN }).catch(() => undefined)
     return NextResponse.json({ error: error instanceof Error ? error.message : "Upload failed." }, { status: 503 })
   }
 }
