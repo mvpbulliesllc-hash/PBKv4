@@ -594,52 +594,187 @@ function PipelineModule() {
 
 /* ---------------------------- knowledge suite ------------------------------ */
 
+type CrmContact = {
+  id: string
+  displayName: string
+  company?: string | null
+  status: string
+  email?: string | null
+  updatedAt: string
+}
+
+const STATUS_DOT: Record<string, string> = {
+  lead: "bg-warn",
+  qualified: "bg-info",
+  customer: "bg-accent",
+  inactive: "bg-text-faint",
+}
+
 function ContactsModule() {
   const [query, setQuery] = useState("")
+  const [contacts, setContacts] = useState<CrmContact[]>([])
+  const [status, setStatus] = useState<"idle" | "loading" | "error" | "needs-setup">("idle")
   const [selected, setSelected] = useState("No contact selected")
-  const people = [
-    { n: "Sarah Chen", c: "Acme Corp", s: "Deal — $48k", stage: "bg-accent" },
-    { n: "Marcus Vega", c: "Paragon", s: "Warm lead", stage: "bg-warn" },
-    { n: "Lena Ortiz", c: "Skal", s: "Customer", stage: "bg-info" },
-  ]
-  const visible = people.filter((person) =>
-    `${person.n} ${person.c} ${person.s}`.toLowerCase().includes(query.toLowerCase()),
+  const [adding, setAdding] = useState(false)
+  const [newName, setNewName] = useState("")
+  const [newEmail, setNewEmail] = useState("")
+  const [newCompany, setNewCompany] = useState("")
+
+  const load = () => {
+    setStatus("loading")
+    fetch("/api/crm/contacts?limit=100", { cache: "no-store" })
+      .then(async (res) => {
+        if (res.status === 503) {
+          const body = await res.json().catch(() => ({}))
+          if ((body as { error?: string }).error?.includes("migration") || (body as { error?: string }).error?.includes("crm_contacts")) {
+            setStatus("needs-setup")
+          } else {
+            setStatus("error")
+          }
+          return
+        }
+        if (!res.ok) { setStatus("error"); return }
+        const data = await res.json() as { contacts?: CrmContact[] }
+        setContacts(data.contacts ?? [])
+        setStatus("idle")
+      })
+      .catch(() => setStatus("error"))
+  }
+
+  const runSetup = () => {
+    setStatus("loading")
+    fetch("/api/crm/setup", { method: "POST", cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) { setStatus("error"); return }
+        load()
+      })
+      .catch(() => setStatus("error"))
+  }
+
+  const addContact = () => {
+    const name = newName.trim()
+    if (!name) return
+    fetch("/api/crm/contacts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ displayName: name, email: newEmail.trim() || undefined, company: newCompany.trim() || undefined }),
+    })
+      .then(async (res) => {
+        if (!res.ok) return
+        setNewName(""); setNewEmail(""); setNewCompany(""); setAdding(false)
+        load()
+      })
+      .catch(() => undefined)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const visible = contacts.filter((c) =>
+    `${c.displayName} ${c.company ?? ""} ${c.email ?? ""}`.toLowerCase().includes(query.toLowerCase()),
   )
 
   return (
-    <Pad>
-      <div className="mb-2 flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-1.5">
-        <Search className="size-3.5 text-text-faint" />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search CRM..."
-          className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none"
-        />
-      </div>
-      <div className="space-y-1">
-        {visible.map((p) => (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-1.5">
+        <Contact className="size-3.5 text-accent" />
+        <span className="text-xs font-medium text-text">CRM Contacts</span>
+        <span className="text-[11px] text-text-faint">{contacts.length} total</span>
+        <div className="ml-auto flex items-center gap-1">
           <button
-            key={p.n}
-            onClick={() => setSelected(`${p.n} · ${p.s}`)}
-            className="flex w-full items-center gap-2.5 rounded-md border border-line bg-void px-2.5 py-2 text-left"
+            onClick={() => setAdding((v) => !v)}
+            className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-[11px] font-medium text-void"
           >
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-hover text-[10px] font-semibold text-text">
-              {p.n.split(" ").map((x) => x[0]).join("")}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-text">{p.n}</p>
-              <p className="truncate text-[11px] text-text-faint">{p.c}</p>
-            </div>
-            <span className="flex items-center gap-1 text-[10px] text-text-faint">
-              <span className={cn("size-1.5 rounded-full", p.stage)} />
-              {p.s}
-            </span>
+            <Plus className="size-3" /> Add
           </button>
-        ))}
+        </div>
       </div>
-      <ActionLine text={selected} />
-    </Pad>
+
+      {adding ? (
+        <div className="shrink-0 border-b border-line p-3 space-y-2">
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Full name *"
+            className="w-full rounded-md border border-line bg-void px-2.5 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-line-strong focus:outline-none"
+          />
+          <input
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="Email"
+            className="w-full rounded-md border border-line bg-void px-2.5 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-line-strong focus:outline-none"
+          />
+          <input
+            value={newCompany}
+            onChange={(e) => setNewCompany(e.target.value)}
+            placeholder="Company"
+            className="w-full rounded-md border border-line bg-void px-2.5 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-line-strong focus:outline-none"
+          />
+          <div className="flex gap-2">
+            <button onClick={addContact} className="flex-1 rounded bg-accent py-1.5 text-xs font-medium text-void">Save contact</button>
+            <button onClick={() => setAdding(false)} className="flex-1 rounded border border-line py-1.5 text-xs text-text-muted hover:bg-hover">Cancel</button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="shrink-0 border-b border-line px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-md border border-line bg-void px-2.5 py-1.5">
+          <Search className="size-3.5 shrink-0 text-text-faint" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search contacts..."
+            className="flex-1 bg-transparent text-xs text-text placeholder:text-text-faint focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto">
+        {status === "loading" ? (
+          <div className="flex items-center justify-center p-6">
+            <span className="text-xs text-text-faint">Loading contacts…</span>
+          </div>
+        ) : status === "needs-setup" ? (
+          <div className="flex flex-col items-center gap-3 p-6">
+            <p className="text-center text-xs text-text-muted">Database tables not found. Run setup to create the CRM schema.</p>
+            <button onClick={runSetup} className="rounded bg-accent px-4 py-1.5 text-xs font-medium text-void">
+              Run DB Setup
+            </button>
+          </div>
+        ) : status === "error" ? (
+          <div className="flex flex-col items-center gap-3 p-6">
+            <p className="text-center text-xs text-warn">Could not reach the CRM. Check database configuration.</p>
+            <button onClick={load} className="rounded border border-line px-3 py-1 text-xs text-text-muted hover:bg-hover">Retry</button>
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-6">
+            <p className="text-center text-xs text-text-faint">{contacts.length === 0 ? "No contacts yet. Add your first contact." : "No contacts match."}</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-line/60">
+            {visible.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelected(`${c.displayName} · ${c.status}`)}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-hover/40"
+              >
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-hover text-[10px] font-semibold text-text">
+                  {c.displayName.split(" ").slice(0, 2).map((x) => x[0]).join("")}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs text-text">{c.displayName}</p>
+                  <p className="truncate text-[11px] text-text-faint">{c.company ?? c.email ?? "—"}</p>
+                </div>
+                <span className="flex items-center gap-1 text-[10px] text-text-faint">
+                  <span className={cn("size-1.5 rounded-full", STATUS_DOT[c.status] ?? "bg-text-faint")} />
+                  {c.status}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="shrink-0 border-t border-line px-3 py-1.5 text-[11px] text-text-faint">{selected}</div>
+    </div>
   )
 }
 
@@ -904,25 +1039,55 @@ function FilesModule() {
   )
 }
 
+type ServiceEntry = { id: string; label: string; status: string }
+
 function EnvModule() {
-  const [tools, setTools] = useState<Array<{ id: string; label: string; status: string }>>([])
+  const [services, setServices] = useState<ServiceEntry[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let active = true
-    fetch("/api/ay0/catalog", { cache: "no-store" })
-      .then(async (response) => response.ok ? response.json() as Promise<{ tools?: Array<{ id: string; label: string; status: string }> }> : { tools: [] })
-      .then((data) => { if (active) setTools(data.tools ?? []) })
-      .catch(() => { if (active) setTools([]) })
+    Promise.allSettled([
+      fetch("/api/crm/health", { cache: "no-store" })
+        .then(async (r) => {
+          const body = await r.json() as { status?: string }
+          return { id: "crm-db", label: "CRM / Neon DB", status: body.status === "ready" ? "ready" : body.status ?? "unavailable" }
+        }),
+      fetch("/api/ay0/connectors/health", { cache: "no-store" })
+        .then(async (r) => {
+          if (!r.ok) return [] as ServiceEntry[]
+          const body = await r.json() as { connectors?: Array<{ capability: string; label: string; status: string }> }
+          return (body.connectors ?? []).map((c) => ({ id: c.capability, label: c.label, status: c.status }))
+        }),
+    ]).then(([crmResult, connectorsResult]) => {
+      if (!active) return
+      const entries: ServiceEntry[] = []
+      if (crmResult.status === "fulfilled") entries.push(crmResult.value)
+      if (connectorsResult.status === "fulfilled") entries.push(...connectorsResult.value)
+      setServices(entries)
+      setLoading(false)
+    }).catch(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])
+
+  const placeholder: ServiceEntry[] = [{ id: "loading", label: "Checking services…", status: "…" }]
 
   return (
     <Pad>
       <div className="space-y-1.5 font-mono text-xs">
-        {(tools.length ? tools : [{ id: "vault", label: "AY.0 vault", status: "loading" }]).slice(0, 10).map((tool) => (
-          <div key={tool.id} className="flex items-center justify-between rounded-md border border-line bg-void px-2.5 py-1.5">
-            <span className="truncate text-text-muted">{tool.label}</span>
-            <span className={cn("ml-2 shrink-0 text-[10px]", tool.status === "env-ready" ? "text-live" : tool.status === "quarantined" ? "text-warn" : "text-text-faint")}>{tool.status}</span>
+        {(loading || services.length === 0 ? placeholder : services).map((entry) => (
+          <div key={entry.id} className="flex items-center justify-between rounded-md border border-line bg-void px-2.5 py-1.5">
+            <span className="truncate text-text-muted">{entry.label}</span>
+            <span className={cn(
+              "ml-2 shrink-0 text-[10px]",
+              entry.status === "ready" || entry.status === "authenticated" || entry.status === "env-ready"
+                ? "text-live"
+                : entry.status === "quarantined" || entry.status === "needs-setup" || entry.status === "unavailable"
+                  ? "text-warn"
+                  : "text-text-faint",
+            )}>
+              {entry.status}
+            </span>
           </div>
         ))}
       </div>
